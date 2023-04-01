@@ -1,0 +1,8 @@
+/.vs/
+/RaytracerTest/
+/assets/shaders/*.spv
+/assets/shaders/*.bat
+/x64/
+/libraries/
+*.sln
+*.vcxproj*
