@@ -433,17 +433,6 @@ private:
 			vkDestroyRenderPass(device, renderPass, nullptr);
 		}
 
-		for (size_t i = 0; i < shaderStorageBuffers.size(); i++) {
-			if (shaderStorageBuffers[i] != nullptr) {
-				vkDestroyBuffer(device, shaderStorageBuffers[i], nullptr);
-			}
-		}
-
-		for (size_t i = 0; i < shaderStorageBuffersMemory.size(); i++) {
-			if (shaderStorageBuffersMemory[i] != nullptr) {
-				vkFreeMemory(device, shaderStorageBuffersMemory[i], nullptr);
-			}
-		}
 
 		for (size_t i = 0; i < renderFinishedSemaphores.size(); i++) {
 			if (renderFinishedSemaphores[i] != nullptr) {
@@ -1063,9 +1052,6 @@ private:
 
 	VkRenderPass renderPass;
 	VkCommandPool commandPool;
-
-	std::vector<VkBuffer> shaderStorageBuffers;
-	std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkCommandBuffer> computeCommandBuffers;
