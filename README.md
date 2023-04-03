@@ -26,7 +26,8 @@ Run the following commands with `...` replaced with relevant paths and `x.x.x.x`
  3. Add `Libraries/bin` folder, GLFW installation's relevant `lib` folder, and Vulkan installation's `Lib` folder to library directories.
  4. Add `vulkan-1.lib;glfw3.lib` to libraries.
  5. Add `Libraries/include`, GLFW installation's `include` folder, GLM's `glm` directory, and `stb_image.h` your Vulkan installation's `Include` directory to include directories.
- 6. Build and run the project
+ 6. Add `GLFW_INCLUDE_VULKAN` to preprocessor definitions.
+ 7. Build and run the project
 
 ## Special Thanks
 

@@ -1,4 +1,4 @@
-import <iostream>;
+import std.core;
 
 import RaytracerEngine;
 
@@ -13,7 +13,7 @@ int main() {
 		raytracer.Run();
 	}
 	catch (std::runtime_error e) {
-		std::cerr << e.what() << "\n";
+		std::cerr << "Fatal Error: " << e.what() << "\n";
 	}
 
 	return 0;
