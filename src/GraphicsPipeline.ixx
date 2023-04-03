@@ -99,6 +99,13 @@ public:
 		return *this;
 	}
 
+	GraphicsPipelineBuilder& WithDescriptors(VkDescriptorSetLayout* descriptorSetLayouts, uint32_t layoutCount) {
+		pipelineLayoutInfo.setLayoutCount = layoutCount;
+		pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
+
+		return *this;
+	}
+
 	void Build(GraphicsPipeline& graphicsPipeline) {
 		VkDevice device = VulkanCore::GetDevice();
 
@@ -153,10 +160,7 @@ public:
 		dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 		dynamicState.pDynamicStates = dynamicStates.data();
 
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
-		pipelineLayoutInfo.pSetLayouts = nullptr;
 
 		VkPipelineLayout pipelineLayout;
 		if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
@@ -209,6 +213,7 @@ private:
 
 	VkRenderPass renderPass = nullptr;
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	std::vector<VkShaderModule> shaderModules;
 };

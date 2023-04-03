@@ -6,6 +6,8 @@ import <glm/gtc/matrix_transform.hpp>;
 import <vulkan/vulkan.h>;
 import GraphicsPipeline;
 import Buffer;
+import DescriptorSet;
+import DescriptorPool;
 import Texture;
 import VulkanCore;
 
@@ -57,6 +59,7 @@ public:
 
 		this->vulkanCore = vulkanCore;
 		texture.Initialize("assets/textures/texture.jpg");
+		sampler.Initialize();
 
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		indexBuffer.Initialize(static_cast<const void*>(indices.data()), indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -64,11 +67,19 @@ public:
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
 
+		DescriptorPoolBuilder()
+			.WithImageSamplers(1)
+			.Build(descriptorPool);
+
+		descriptorSet.Initialize(texture, sampler, descriptorPool);
+		VkDescriptorSetLayout descriptorSetLayout = descriptorSet.GetLayout();
+
 		GraphicsPipelineBuilder(vulkanCore->GetRenderPass(), 2)
-			.WithVertexModule("assets/shaders/vert.spv")
-			.WithFragmentModule("assets/shaders/frag.spv")
+			.WithVertexModule("assets/shaders/Fullscreen.vert.spv")
+			.WithFragmentModule("assets/shaders/Fullscreen.frag.spv")
 			.WithVertexBindings(&vertexBindingDescription, 1)
 			.WithVertexAttributes(vertexAttributeDescription.data(), static_cast<uint32_t>(vertexAttributeDescription.size()))
+			.WithDescriptors(&descriptorSetLayout, 1)
 			.Build(graphicsPipeline);
 
 		std::cout << "Initialized Renderer.\n";
@@ -130,6 +141,9 @@ public:
 
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
+		VkDescriptorSet descriptorSetRef = descriptorSet.GetDescriptorSet();
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.GetPipelineLayout(), 0, 1, &descriptorSetRef, 0, nullptr);
+
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
@@ -141,7 +155,10 @@ public:
 
 private:
 	VulkanCore* vulkanCore;
+	DescriptorSet descriptorSet;
+	DescriptorPool descriptorPool;
 	Texture texture;
+	Sampler sampler;
 	GraphicsPipeline graphicsPipeline;
 	Buffer vertexBuffer;
 	Buffer indexBuffer;

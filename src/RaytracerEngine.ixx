@@ -16,8 +16,14 @@ public:
 			return false;
 		}
 
+		vulkanCore.ShowWindow();
+
 		std::cout << "Initialized Raytracer Engine.\n";
 		return true;
+	}
+
+	~RaytracerEngine() {
+		vulkanCore.HideWindow();
 	}
 
 	void Run() {

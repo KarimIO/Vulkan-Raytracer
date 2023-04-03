@@ -9,6 +9,7 @@ export class Texture {
 public:
 	void Initialize(std::string_view path) {
 		VkDevice device = VulkanCore::GetDevice();
+
 		int texWidth, texHeight, texChannels;
 		stbi_uc* pixels = stbi_load(path.data(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 		VkDeviceSize imageSize = texWidth * texHeight * 4;
@@ -36,17 +37,30 @@ public:
 
 		vkDestroyBuffer(device, stagingBuffer, nullptr);
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
+
+		textureImageView = VulkanCore::CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+	}
+
+	VkImageView GetImageView() {
+		return textureImageView;
 	}
 
 	~Texture() {
 		VkDevice device = VulkanCore::GetDevice();
 
+		if (textureImageView != nullptr) {
+			vkDestroyImageView(device, textureImageView, nullptr);
+			textureImageView = nullptr;
+		}
+
 		if (textureImage != nullptr) {
 			vkDestroyImage(device, textureImage, nullptr);
+			textureImage = nullptr;
 		}
 
 		if (textureImageMemory != nullptr) {
 			vkFreeMemory(device, textureImageMemory, nullptr);
+			textureImageMemory = nullptr;
 		}
 	}
 private:
@@ -74,5 +88,6 @@ private:
 	}
 
 	VkImage textureImage = nullptr;
+	VkImageView textureImageView = nullptr;
 	VkDeviceMemory textureImageMemory = nullptr;
 };
