@@ -3,14 +3,14 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0, rgba8) uniform writeonly image2D resultImage;
 
-vec3 sphereCenter = vec3(0,0,2);
+vec3 sphereCenter = vec3(0,0,-2);
 float sphereRadius = 0.5f;
 vec3 sphereColor = vec3(0.8,0.05,0.06);
 
 vec3 skyColor = vec3(0.5, 0.7, 1.0);
 vec3 groundColor = vec3(1, 1, 1);
 
-vec3 lightPos = vec3(2, 2, 0);
+vec3 lightPos = vec3(2, -2, 0);
 
 float HitSphere(vec3 center, float radius, vec3 origin, vec3 dir) {
     vec3 oc = origin - center;
@@ -23,7 +23,7 @@ float HitSphere(vec3 center, float radius, vec3 origin, vec3 dir) {
         return -1.0;
     }
     else {
-        return (b - sqrt(discriminant) ) / (2.0*a);
+        return (-b - sqrt(discriminant) ) / (2.0*a);
     }
 }
 
@@ -118,14 +118,14 @@ vec3 LightPointCalc(
 vec3 RenderRay(vec3 origin, vec3 dir) {
     float hitDistanceAlongRay = HitSphere(sphereCenter, sphereRadius, origin, dir);
     if (hitDistanceAlongRay > 0.0) {
-        vec3 hitPos = (origin - sphereCenter) + -hitDistanceAlongRay * dir;
-        vec3 normal = normalize(hitPos);
+        vec3 hitPos = origin + hitDistanceAlongRay * dir;
+        vec3 normal = normalize(hitPos - sphereCenter);
 
 		vec3 albedo = sphereColor;
 		vec3 specularTexture = vec3(1);
-		float roughness = 0;
-		float lightRadius = 10;
-		vec3 lightColor = vec3(1.0, 0.8, 0.6) * 20;
+		float roughness = 0.1;
+		float lightRadius = 20;
+		vec3 lightColor = vec3(1.0, 0.8, 0.6) * 30;
         
 		return LightPointCalc(
 			albedo,
