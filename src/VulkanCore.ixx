@@ -90,6 +90,10 @@ public:
 		return glfwWindowShouldClose(window);
 	}
 
+	void WaitUntilEndOfFrame() {
+		vkDeviceWaitIdle(device);
+	}
+
 	VkRenderPass GetRenderPass() {
 		return renderPass;
 	}
@@ -423,16 +427,10 @@ private:
 	}
 
 	void CleanupDevice() {
-		vkDeviceWaitIdle(device);
-
 		CleanupSwapChain();
 
 		if (renderPass != nullptr) {
 			vkDestroyRenderPass(device, renderPass, nullptr);
-		}
-
-		if (descriptorPool != nullptr) {
-			vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 		}
 
 		for (size_t i = 0; i < shaderStorageBuffers.size(); i++) {
@@ -1068,9 +1066,6 @@ private:
 
 	std::vector<VkBuffer> shaderStorageBuffers;
 	std::vector<VkDeviceMemory> shaderStorageBuffersMemory;
-
-	VkDescriptorPool descriptorPool;
-	std::vector<VkDescriptorSet> computeDescriptorSets;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkCommandBuffer> computeCommandBuffers;

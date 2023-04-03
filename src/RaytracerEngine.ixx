@@ -26,6 +26,8 @@ public:
 			vulkanCore.PollEvents();
 			renderer.Render();
 		}
+
+		vulkanCore.WaitUntilEndOfFrame();
 	}
 
 	void HandleTime() {
