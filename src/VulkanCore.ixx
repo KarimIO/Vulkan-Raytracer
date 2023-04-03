@@ -103,6 +103,10 @@ public:
 		glfwHideWindow(window);
 	}
 
+	uint32_t GetCurrentFrame() {
+		return currentFrame;
+	}
+
 	VkRenderPass GetRenderPass() {
 		return renderPass;
 	}

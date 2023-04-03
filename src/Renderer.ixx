@@ -3,7 +3,6 @@ export module Renderer;
 import std.core;
 
 import <glm/glm.hpp>;
-import <glm/gtc/matrix_transform.hpp>;
 import <vulkan/vulkan.h>;
 
 import Buffer;
@@ -15,12 +14,6 @@ import GraphicsPipeline;
 import Texture;
 import RaytracerTargetImage;
 import VulkanCore;
-
-struct UniformBufferObject {
-	alignas(16) glm::mat4 model;
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 proj;
-};
 
 struct Vertex {
 	glm::vec2 pos;
@@ -69,6 +62,8 @@ public:
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		indexBuffer.Initialize(static_cast<const void*>(indices.data()), indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
+		uniformBuffer.Initialize();
+
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
 
@@ -76,11 +71,12 @@ public:
 
 		DescriptorPoolBuilder()
 			.WithStorageImages(1)
+			.WithUniformBuffers(1)
 			.WithImageSamplers(1)
 			.Build(descriptorPool);
 
 		descriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
-		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
+		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, uniformBuffer, descriptorPool);
 		VkDescriptorSetLayout descriptorSetLayout = descriptorSet.GetLayout();
 
 		computePipeline.Initialize("assets/shaders/Raytracing.comp.spv", computeDescriptorSet);
@@ -95,6 +91,10 @@ public:
 
 		std::cout << "Initialized Renderer.\n";
 		return true;
+	}
+
+	void SetUniformData(double time, glm::mat4& matrix) {
+		uniformBuffer.SetUniformData(time, matrix);
 	}
 
 	void Render() {
@@ -203,6 +203,7 @@ private:
 	DescriptorSet descriptorSet;
 	ComputeDescriptorSet computeDescriptorSet;
 	DescriptorPool descriptorPool;
+	UniformBuffer uniformBuffer;
 	RaytracerTargetImage raytracerTargetImage;
 	Texture texture;
 	Sampler sampler;

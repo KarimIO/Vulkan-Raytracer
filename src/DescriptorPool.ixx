@@ -27,7 +27,7 @@ private:
 
 export class DescriptorPoolBuilder {
 public:
-	DescriptorPoolBuilder& WithUniformBuffer(uint32_t count) {
+	DescriptorPoolBuilder& WithUniformBuffers(uint32_t count) {
 		poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, count);
 
 		return *this;
