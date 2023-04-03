@@ -8,6 +8,8 @@ layout(binding = 1) uniform UniformBufferObject {
 	float time;
 } ubo;
 
+const int numSpheres = 4;
+
 vec3 skyColor = vec3(0.11, 0.36, 0.57);
 vec3 horizonColor = vec3(0.83, 0.82, 0.67);
 vec3 groundColor = vec3(0.2, 0.2, 0.2);
@@ -15,6 +17,7 @@ vec3 groundColor = vec3(0.2, 0.2, 0.2);
 struct Material {
 	vec3 albedo;
 	vec3 emission;
+	float metallic;
 	float roughness;
 };
 
@@ -73,7 +76,7 @@ HitInfo IntersectSphere(Sphere sphere, Ray ray) {
 }
 
 vec3 GetSkyColor(vec3 dir) {
-	vec3 sunLightDirection = normalize(vec3(0.2, 1, 1));
+	vec3 sunLightDirection = normalize(vec3(0.2, 0.6, 1));
 	float sunFocus = 200.0f;
 	float sunIntensity = 10.0f;
 
@@ -88,13 +91,12 @@ vec3 GetSkyColor(vec3 dir) {
 	return mix(skyGradient, groundColor, groundToSkyTransition) + sunFactor;
 }
 
-HitInfo CalculateRayHit(Sphere[3] spheres, Ray ray) {
+HitInfo CalculateRayHit(Sphere[numSpheres] spheres, Ray ray) {
 	HitInfo closestHit;
 	closestHit.isHit = false;
 	const float positiveInfinity = uintBitsToFloat(0x7F800000);
 	closestHit.hitDistance = 100000000.0f;
 
-	int numSpheres = 3;
 	for (int i = 0; i < numSpheres; ++i) {
 		Sphere sphere = spheres[i];
 
@@ -143,7 +145,7 @@ vec3 GetRayBounceDir(vec3 normal, vec3 rayDir, float roughness, inout uint seed)
 	return mix(specularDir, diffuseDir, roughness);
 }
 
-vec3 Raytrace(Sphere[3] spheres, Ray originalRay, inout uint seed) {
+vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 	vec3 incomingLight = vec3(0);
 	vec3 rayColor = vec3(1);
 	
@@ -170,7 +172,7 @@ vec3 Raytrace(Sphere[3] spheres, Ray originalRay, inout uint seed) {
 	return incomingLight;
 }
 
-vec3 MultiRaytrace(Sphere[3] spheres, Ray ray, inout uint seed) {
+vec3 MultiRaytrace(Sphere[numSpheres] spheres, Ray ray, inout uint seed) {
 	vec3 totalLight = vec3(0.0f);
 
 	int numRaysPerPixel = 200;
@@ -182,41 +184,47 @@ vec3 MultiRaytrace(Sphere[3] spheres, Ray ray, inout uint seed) {
 }
 
 void main() {
-	Sphere spheres[3];
+	Sphere spheres[numSpheres];
 
-	spheres[0].center = vec3(-1, 0.5, -3);
+	spheres[0].center = vec3(-0.9, 0.2, -3);
 	spheres[0].radius = 0.4;
 	spheres[0].material.albedo = vec3(0.05,0.06,0.8);
 	spheres[0].material.emission = vec3(0);
-	spheres[0].material.roughness = 1;
+	spheres[0].material.roughness = 0.95;
 	
 	spheres[1].center = vec3(0, 5.5, -3);
 	spheres[1].radius = 5;
-	spheres[1].material.albedo = vec3(0.8,0.05,0.06);
+	spheres[1].material.albedo = vec3(0.99,0.95,0.90);
 	spheres[1].material.emission = vec3(0);
-	spheres[1].material.roughness = 0.05;
+	spheres[1].material.roughness = 0.9;
 	
-	spheres[2].center = vec3(1, 0, -3);
+	spheres[2].center = vec3(0, 0, -3);
 	spheres[2].radius = 0.5;
-	spheres[2].material.emission = vec3(5.5);
-	spheres[2].material.roughness = 0.0;
+	spheres[2].material.albedo = vec3(1.0, 1.0, 1.0);
+	spheres[2].material.emission = vec3(0);
+	spheres[2].material.roughness = 0.05;
+	
+	spheres[3].center = vec3(1.2, 0, -3);
+	spheres[3].radius = 0.5;
+	spheres[3].material.emission = vec3(5.5);
+	spheres[3].material.roughness = 0.0;
 	
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
 
-	float aspect_ratio = float(dim.x) / float(dim.y);
+	float aspectRatio = float(dim.x) / float(dim.y);
 	
-	float viewport_height = 2.0;
-	float viewport_width = aspect_ratio * viewport_height;
-	float focal_length = 2.0;
+	float viewportHeight = 2.0;
+	float viewportWidth = aspectRatio * viewportHeight;
+	float focalLength = 2.0;
 	
 	vec3 origin = vec3(0, 0, 0);
-	vec3 horizontal = vec3(viewport_width, 0, 0);
-	vec3 vertical = vec3(0, viewport_height, 0);
-	vec3 lower_left_corner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focal_length);
+	vec3 horizontal = vec3(viewportWidth, 0, 0);
+	vec3 vertical = vec3(0, viewportHeight, 0);
+	vec3 lowerLeftCorner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focalLength);
 
 	vec3 fwd = vec3(0, 0, 1);
-	vec3 dir = lower_left_corner + uv.x * horizontal + uv.y * vertical - origin;
+	vec3 dir = lowerLeftCorner + uv.x * horizontal + uv.y * vertical - origin;
 
 	Ray ray;
 	ray.origin = origin;

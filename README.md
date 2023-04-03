@@ -2,6 +2,29 @@
 
 A test project using Vulkan to build a compute-shader-based raytracer.
 
+Currently we support compute-shader-based raytracing with multi-bounce and multi-ray per pixel. We only support spheres for the time being.
+
+![A demo image](Demo.jpg "A demo image")
+
+## Roadmap
+
+ * Fixing all Vulkan Validation Layer warnings
+ * Use a matrix-projected camera
+ * Resizing the viewport
+ * Move the camera using glfw input
+ * Support Cook-Torrence BRDF
+ * Adding support for triangles
+ * Culling objects by AABB
+ * Two-Coat Materials
+ * Depth of Field
+ * Textures
+   * Texture Infrastructure
+   * Albedo Texture
+   * Normal Texture
+   * Metallic Texture
+   * Roughness Texture
+ * Other methods of denoise
+
 ## How to Build
 
 ### Libraries and APIs used
@@ -29,6 +52,14 @@ Run the following commands with `...` replaced with relevant paths and `x.x.x.x`
  6. Add `GLFW_INCLUDE_VULKAN` to preprocessor definitions.
  7. Build and run the project
 
-## Special Thanks
+## References and Thanks
 
-Thanks to `https://vulkan-tutorial.com` which provides the base of this Vulkan framework.
+### PBR and Raytracing
+ * [LearnOpengl.com's PBR Theory Article](https://learnopengl.com/PBR/Theory) by Joey de Vries
+ * [Ray Tracing in One Weekend](https://raytracing.github.io/) by Peter Shirley
+ * [Physically Based Rendering: From Theory To Implementation](https://pbr-book.org/) by Matt Pharr, Wenzel Jakob, and Greg Humphreys
+ * [Sebastian Lague's YouTube Video](https://www.youtube.com/watch?v=Qz0KTGYJtUk) which provides an excellent summary over the concept of Raytracing
+
+### Vulkan
+ * [Vulkan-Tutorial.com](https://vulkan-tutorial.com) by Alexander Overvoorde and Sascha Willems
+ * [This Vulkan Github Repository](https://github.com/SaschaWillems/Vulkan) by Sascha Willems
