@@ -1,4 +1,4 @@
-export module DescriptorSet;
+export module ComputeDescriptorSet;
 
 import std.core;
 import <vulkan/vulkan.h>;
@@ -7,21 +7,19 @@ import Sampler;
 import DescriptorPool;
 import VulkanCore;
 
-export class DescriptorSet {
+export class ComputeDescriptorSet {
 public:
 	void Initialize(RaytracerTargetImage& texture, Sampler& sampler, DescriptorPool& descriptorPool) {
 		VkDevice device = VulkanCore::GetDevice();
 
+		VkDescriptorSetLayoutBinding imageLayoutBinding{};
+		imageLayoutBinding.binding = 0;
+		imageLayoutBinding.descriptorCount = 1;
+		imageLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		imageLayoutBinding.pImmutableSamplers = nullptr;
+		imageLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-
-		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 0;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-		std::array<VkDescriptorSetLayoutBinding, 1> bindings = { samplerLayoutBinding };
+		std::array<VkDescriptorSetLayoutBinding, 1> bindings = { imageLayoutBinding };
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -44,7 +42,7 @@ public:
 		}
 
 		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageInfo.imageView = texture.GetImageView();
 		imageInfo.sampler = sampler.GetSampler();
 
@@ -53,7 +51,7 @@ public:
 		descriptorWrite.dstSet = descriptorSet;
 		descriptorWrite.dstBinding = 0;
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.pImageInfo = &imageInfo;
 
@@ -68,7 +66,7 @@ public:
 		return descriptorSetLayout;
 	}
 
-	~DescriptorSet() {
+	~ComputeDescriptorSet() {
 		VkDevice device = VulkanCore::GetDevice();
 
 		if (descriptorSetLayout != nullptr) {

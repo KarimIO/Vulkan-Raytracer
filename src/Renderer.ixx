@@ -1,14 +1,19 @@
 export module Renderer;
 
 import std.core;
+
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
 import <vulkan/vulkan.h>;
-import GraphicsPipeline;
+
 import Buffer;
+import ComputePipeline;
+import ComputeDescriptorSet;
 import DescriptorSet;
 import DescriptorPool;
+import GraphicsPipeline;
 import Texture;
+import RaytracerTargetImage;
 import VulkanCore;
 
 struct UniformBufferObject {
@@ -67,12 +72,18 @@ public:
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
 
+		raytracerTargetImage.Initialize(800, 600);
+
 		DescriptorPoolBuilder()
+			.WithStorageImages(1)
 			.WithImageSamplers(1)
 			.Build(descriptorPool);
 
-		descriptorSet.Initialize(texture, sampler, descriptorPool);
+		descriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
+		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
 		VkDescriptorSetLayout descriptorSetLayout = descriptorSet.GetLayout();
+
+		computePipeline.Initialize("assets/shaders/Raytracing.comp.spv", computeDescriptorSet);
 
 		GraphicsPipelineBuilder(vulkanCore->GetRenderPass(), 2)
 			.WithVertexModule("assets/shaders/Fullscreen.vert.spv")
@@ -87,13 +98,47 @@ public:
 	}
 
 	void Render() {
-		VkCommandBuffer commandBuffer = vulkanCore->PrepareFrame();
-		if (commandBuffer == nullptr) {
-			return;
+		{
+			VkCommandBuffer computeCommandBuffer = vulkanCore->PrepareComputeCommandBuffer();
+			if (computeCommandBuffer == nullptr) {
+				return;
+			}
+
+			RecordComputeCommandBuffer(computeCommandBuffer);
+			vulkanCore->SubmitComputeCommandBuffer(computeCommandBuffer);
 		}
 
-		RecordCommandBuffer(commandBuffer);
-		vulkanCore->SubmitFrame();
+		{
+			VkCommandBuffer graphicsCommandBuffer = vulkanCore->PrepareGraphicsCommandBuffer();
+			if (graphicsCommandBuffer == nullptr) {
+				return;
+			}
+
+			RecordCommandBuffer(graphicsCommandBuffer);
+			vulkanCore->SubmitRenderCommandBuffer(graphicsCommandBuffer);
+		}
+
+		vulkanCore->PresentSwapChainImage();
+	}
+
+	void RecordComputeCommandBuffer(VkCommandBuffer commandBuffer) {
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+			throw std::runtime_error("failed to begin recording compute command buffer!");
+		}
+
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipeline());
+
+		VkDescriptorSet descriptorSet = computeDescriptorSet.GetDescriptorSet();
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
+
+		vkCmdDispatch(commandBuffer, 800 / 16, 600 / 16, 1);
+
+		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+			throw std::runtime_error("failed to record compute command buffer!");
+		}
 	}
 
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer) {
@@ -156,10 +201,13 @@ public:
 private:
 	VulkanCore* vulkanCore;
 	DescriptorSet descriptorSet;
+	ComputeDescriptorSet computeDescriptorSet;
 	DescriptorPool descriptorPool;
+	RaytracerTargetImage raytracerTargetImage;
 	Texture texture;
 	Sampler sampler;
 	GraphicsPipeline graphicsPipeline;
+	ComputePipeline computePipeline;
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
 };

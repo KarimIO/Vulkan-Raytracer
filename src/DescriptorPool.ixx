@@ -33,6 +33,12 @@ public:
 		return *this;
 	}
 
+	DescriptorPoolBuilder& WithStorageImages(uint32_t count) {
+		poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, count);
+
+		return *this;
+	}
+
 	DescriptorPoolBuilder& WithImageSamplers(uint32_t count) {
 		poolSizes.emplace_back(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, count);
 
@@ -46,7 +52,7 @@ public:
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(1);
+		poolInfo.maxSets = static_cast<uint32_t>(4);
 
 		VkDescriptorPool descriptorPool;
 		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {

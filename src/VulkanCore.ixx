@@ -119,7 +119,16 @@ public:
 		glfwPollEvents();
 	}
 
-	VkCommandBuffer PrepareFrame() {
+	VkCommandBuffer PrepareComputeCommandBuffer() {
+		vkWaitForFences(device, 1, &computeInFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
+		vkResetFences(device, 1, &computeInFlightFences[currentFrame]);
+		vkResetCommandBuffer(computeCommandBuffers[currentFrame], /*VkCommandBufferResetFlagBits*/ 0);
+
+		return computeCommandBuffers[currentFrame];
+	}
+
+	VkCommandBuffer PrepareGraphicsCommandBuffer() {
 		vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
 		VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentSwapchainImageIndex);
@@ -137,8 +146,21 @@ public:
 
 		return commandBuffers[currentFrame];
 	}
+	
+	void SubmitComputeCommandBuffer(VkCommandBuffer commandBuffer) {
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &computeFinishedSemaphores[currentFrame];
 
-	void SubmitFrame() {
+		if (vkQueueSubmit(computeQueue, 1, &submitInfo, computeInFlightFences[currentFrame]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to submit compute command buffer!");
+		};
+	}
+
+	void SubmitRenderCommandBuffer(VkCommandBuffer commandBuffer) {
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -149,21 +171,22 @@ public:
 		submitInfo.pWaitDstStageMask = waitStages;
 
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+		submitInfo.pCommandBuffers = &commandBuffer;
 
-		VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = signalSemaphores;
+		submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 
 		if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
+	}
 
+	void PresentSwapChainImage() {
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores = signalSemaphores;
+		presentInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
 
 		VkSwapchainKHR swapChains[] = { swapChain };
 		presentInfo.swapchainCount = 1;
