@@ -28,6 +28,10 @@ public:
 		vkFreeMemory(device, stagingBufferMemory, nullptr);
 	}
 
+	VkBuffer GetBuffer() {
+		return buffer;
+	}
+
 	~Buffer() {
 		VkDevice device = VulkanCore::GetDevice();
 

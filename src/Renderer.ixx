@@ -131,9 +131,12 @@ public:
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
 		VkDeviceSize offsets[] = { 0 };
-		// vkCmdBindVertexBuffers(commandBuffer, 0, 1, &shaderStorageBuffers[currentFrame], offsets);
+		VkBuffer vertexBuffers[] = { vertexBuffer.GetBuffer()};
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-		// vkCmdDraw(commandBuffer, 1, 1, 0, 0);
+		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
 		vkCmdEndRenderPass(commandBuffer);
 
