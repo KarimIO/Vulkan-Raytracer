@@ -48,7 +48,7 @@ public:
 		}
 
 		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 		imageInfo.imageView = texture.GetImageView();
 		imageInfo.sampler = sampler.GetSampler();
 

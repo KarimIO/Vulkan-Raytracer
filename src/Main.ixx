@@ -12,6 +12,9 @@ int main() {
 	
 		raytracer.Run();
 	}
+	catch (std::invalid_argument e) {
+		std::cerr << "Fatal Invalid Argument Error: " << e.what() << "\n";
+	}
 	catch (std::runtime_error e) {
 		std::cerr << "Fatal Error: " << e.what() << "\n";
 	}

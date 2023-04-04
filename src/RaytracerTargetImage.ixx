@@ -20,6 +20,14 @@ public:
 			image,
 			imageMemory
 		);
+
+		VulkanCore::TransitionImageLayout(
+			image,
+			VK_FORMAT_R8G8B8A8_UNORM,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_GENERAL
+		);
+		
 		imageView = VulkanCore::CreateImageView(image, VK_FORMAT_R8G8B8A8_UNORM);
 	}
 
