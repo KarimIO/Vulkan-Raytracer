@@ -87,6 +87,22 @@ public:
 		return vkCoreInstance->physicalDevice;
 	}
 
+	void GetMousePos(int& xPos, int& yPos) {
+		double x, y;
+		glfwGetCursorPos(window, &x, &y);
+
+		xPos = static_cast<int>(x);
+		yPos = static_cast<int>(y);
+	}
+
+	void SetMousePos(int xPos, int yPos) {
+		glfwSetCursorPos(window, (double)xPos, (double)yPos);
+	}
+
+	int GetKey(int key) {
+		return glfwGetKey(window, key);
+	}
+
 	void PassResizeFramebufferCallback(std::function<void(int&, int&)> func) {
 		resizeFramebufferCallback = func;
 	}
