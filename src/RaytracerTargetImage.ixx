@@ -1,12 +1,18 @@
 export module RaytracerTargetImage;
 
 import std.core;
+import <GLFW/glfw3.h>;
 import <vulkan/vulkan.h>;
-import <stb_image.h>;
 import VulkanCore;
 
 export class RaytracerTargetImage {
 public:
+	void Initialize() {
+		int width, height;
+		VulkanCore::GetVulkanCoreInstance().GetSize(width, height);
+		Initialize(width, height);
+	}
+	
 	void Initialize(int width, int height) {
 		VkDevice device = VulkanCore::GetDevice();
 
@@ -31,11 +37,21 @@ public:
 		imageView = VulkanCore::CreateImageView(image, VK_FORMAT_R8G8B8A8_UNORM);
 	}
 
+	void Resize(int width, int height) {
+		Cleanup();
+
+		Initialize(width, height);
+	}
+
 	VkImageView GetImageView() {
 		return imageView;
 	}
 
 	~RaytracerTargetImage() {
+		Cleanup();
+	}
+	
+	void Cleanup() {
 		VkDevice device = VulkanCore::GetDevice();
 
 		if (imageView != nullptr) {

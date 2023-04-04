@@ -56,7 +56,11 @@ public:
 		std::cout << "Initializing Renderer...\n";
 
 		this->vulkanCore = vulkanCore;
-		texture.Initialize("assets/textures/texture.jpg");
+		vulkanCore->PassResizeFramebufferCallback([&](int w, int h) { this->ResizeFramebufferCallback(w, h); });
+
+		VulkanCore::GetVulkanCoreInstance().GetSize(screenWidth, screenHeight);
+
+		raytracerTargetImage.Initialize(screenWidth, screenHeight);
 		sampler.Initialize();
 
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -66,8 +70,6 @@ public:
 
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
-
-		raytracerTargetImage.Initialize(800, 600);
 
 		DescriptorPoolBuilder()
 			.WithStorageImages(1)
@@ -93,8 +95,12 @@ public:
 		return true;
 	}
 
-	void SetUniformData(double time, glm::mat4& matrix) {
-		uniformBuffer.SetUniformData(time, matrix);
+	void ResizeFramebufferCallback(int width, int height) {
+		raytracerTargetImage.Resize(width, height);
+	}
+
+	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
+		uniformBuffer.SetUniformData(time, cameraToWorld, cameraInverseProj);
 	}
 
 	void Render() {
@@ -134,7 +140,7 @@ public:
 		VkDescriptorSet descriptorSet = computeDescriptorSet.GetDescriptorSet();
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 
-		vkCmdDispatch(commandBuffer, 800 / 16, 600 / 16, 1);
+		vkCmdDispatch(commandBuffer, screenWidth / 16, screenHeight / 16, 1);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record compute command buffer!");
@@ -199,6 +205,9 @@ public:
 	}
 
 private:
+	int screenWidth;
+	int screenHeight;
+
 	VulkanCore* vulkanCore;
 	DescriptorSet descriptorSet;
 	ComputeDescriptorSet computeDescriptorSet;

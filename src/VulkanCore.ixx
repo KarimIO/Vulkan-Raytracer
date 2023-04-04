@@ -87,6 +87,19 @@ public:
 		return vkCoreInstance->physicalDevice;
 	}
 
+	void PassResizeFramebufferCallback(std::function<void(int&, int&)> func) {
+		resizeFramebufferCallback = func;
+	}
+
+	void GetSize(int& width, int& height) {
+		width = 0, height = 0;
+		glfwGetFramebufferSize(window, &width, &height);
+		while (width == 0 || height == 0) {
+			glfwGetFramebufferSize(window, &width, &height);
+			glfwWaitEvents();
+		}
+	}
+
 	bool ShouldClose() {
 		return glfwWindowShouldClose(window);
 	}
@@ -138,7 +151,7 @@ public:
 		VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &currentSwapchainImageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-			RecreateSwapChain();
+			OnResizeFramebuffer();
 			return nullptr;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -201,7 +214,7 @@ public:
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
 			framebufferResized = false;
-			RecreateSwapChain();
+			OnResizeFramebuffer();
 		}
 		else if (result != VK_SUCCESS) {
 			throw std::runtime_error("failed to present swap chain image!");
@@ -559,7 +572,7 @@ private:
 		glfwTerminate();
 	}
 
-	void RecreateSwapChain() {
+	void OnResizeFramebuffer() {
 		int width = 0, height = 0;
 		glfwGetFramebufferSize(window, &width, &height);
 		while (width == 0 || height == 0) {
@@ -568,7 +581,11 @@ private:
 		}
 
 		vkDeviceWaitIdle(device);
+		resizeFramebufferCallback(width, height);
+		RecreateSwapChain();
+	}
 
+	void RecreateSwapChain() {
 		CleanupSwapChain();
 
 		CreateSwapChain();
@@ -1109,6 +1126,8 @@ private:
 	std::vector<VkSemaphore> computeFinishedSemaphores;
 	std::vector<VkFence> inFlightFences;
 	std::vector<VkFence> computeInFlightFences;
+
+	std::function<void(int&, int&)> resizeFramebufferCallback;
 
 	uint32_t currentSwapchainImageIndex = 0;
 	uint32_t currentFrame = 0;

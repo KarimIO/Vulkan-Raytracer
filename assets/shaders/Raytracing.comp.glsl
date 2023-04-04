@@ -4,7 +4,8 @@ layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0, rgba8) uniform writeonly image2D resultImage;
 
 layout(binding = 1) uniform UniformBufferObject {
-	mat4 cameraMatrix;
+	mat4 cameraToWorld;
+	mat4 cameraInverseProj;
 	float time;
 } ubo;
 
@@ -151,7 +152,7 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 	
 	Ray ray = originalRay;
 
-	int maxBounceCount = 4;
+	int maxBounceCount = 3;
 	for (int i = 0; i <= maxBounceCount; ++i) {
 		HitInfo hitInfo = CalculateRayHit(spheres, ray);
 		if (hitInfo.isHit) {
@@ -175,12 +176,25 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 vec3 MultiRaytrace(Sphere[numSpheres] spheres, Ray ray, inout uint seed) {
 	vec3 totalLight = vec3(0.0f);
 
-	int numRaysPerPixel = 200;
+	int numRaysPerPixel = 100;
 	for (int i = 0; i < numRaysPerPixel; ++i) {
 		totalLight += Raytrace(spheres, ray, seed);
 	}
 
 	return totalLight / numRaysPerPixel;
+}
+
+Ray CreateCameraRay(vec2 uv) {
+	vec3 origin = (ubo.cameraToWorld * vec4(0,0,0,1)).xyz;
+	vec3 direction = (ubo.cameraInverseProj * vec4(uv,0,1)).xyz;
+	direction = (ubo.cameraToWorld * vec4(direction,0)).xyz;
+	direction = normalize(direction);
+
+	Ray ray;
+	ray.origin = origin;
+	ray.dir = direction;
+
+	return ray;
 }
 
 void main() {
@@ -198,7 +212,7 @@ void main() {
 	spheres[1].material.emission = vec3(0);
 	spheres[1].material.roughness = 0.9;
 	
-	spheres[2].center = vec3(0, 0, -3);
+	spheres[2].center = vec3(sin(ubo.time), 0, -3);
 	spheres[2].radius = 0.5;
 	spheres[2].material.albedo = vec3(1.0, 1.0, 1.0);
 	spheres[2].material.emission = vec3(0);
@@ -226,6 +240,7 @@ void main() {
 	vec3 fwd = vec3(0, 0, 1);
 	vec3 dir = lowerLeftCorner + uv.x * horizontal + uv.y * vertical - origin;
 
+	// Ray ray = CreateCameraRay(uv);
 	Ray ray;
 	ray.origin = origin;
 	ray.dir = normalize(dir);

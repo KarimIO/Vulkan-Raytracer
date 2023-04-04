@@ -6,7 +6,8 @@ import <vulkan/vulkan.h>;
 import VulkanCore;
 
 struct UniformBufferObject {
-	alignas(16) glm::mat4 cameraMatrix;
+	alignas(16) glm::mat4 cameraToWorld;
+	alignas(16) glm::mat4 cameraInverseProj;
 	float time;
 };
 
@@ -28,11 +29,12 @@ public:
 		}
 	}
 
-	void SetUniformData(double time, glm::mat4& matrix) {
+	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
 		uint32_t currentFrame = VulkanCore::GetVulkanCoreInstance().GetCurrentFrame();
 
 		UniformBufferObject ubo{};
-		ubo.cameraMatrix = matrix;
+		ubo.cameraToWorld = cameraToWorld;
+		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 
 		memcpy(uniformBuffersMapped[0], &ubo, sizeof(ubo));

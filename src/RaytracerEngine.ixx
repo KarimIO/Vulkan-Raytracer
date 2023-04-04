@@ -41,10 +41,10 @@ public:
 		);
 
 		glm::mat4 finalMatrix = projection * view;
-		renderer.SetUniformData(lastTime, finalMatrix);
 
 		while (!vulkanCore.ShouldClose()) {
 			HandleTime();
+			renderer.SetUniformData(lastTime, finalMatrix, finalMatrix);
 			vulkanCore.PollEvents();
 			renderer.Render();
 		}
