@@ -12,6 +12,10 @@ export class RaytracerEngine {
 public:
 	bool Initialize() {
 		std::cout << "Initializing Raytracer Engine...\n";
+
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800.0f / (float)600.0f, 0.1f, 100.0f);
+		invProjectionMatrix = glm::inverse(projection);
+
 		if (!vulkanCore.Initialize()) {
 			return false;
 		}
@@ -31,25 +35,20 @@ public:
 	}
 
 	void Run() {
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800.0f / (float)600.0f, 0.1f, 100.0f);
-		projection[1][1] *= -1;
-
-		glm::mat4 view = glm::lookAt(
-			glm::vec3(4, 3, 3), // Camera is at (4,3,3), in World Space
-			glm::vec3(0, 0, 0), // and looks at the origin
-			glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-		);
-
-		glm::mat4 finalMatrix = projection * view;
-
 		while (!vulkanCore.ShouldClose()) {
 			HandleTime();
-			renderer.SetUniformData(lastTime, finalMatrix, finalMatrix);
+			SetUniformData();
 			vulkanCore.PollEvents();
 			renderer.Render();
 		}
 
 		vulkanCore.WaitUntilEndOfFrame();
+	}
+
+	void SetUniformData() {
+		glm::mat4 camToWorldMatrix = glm::translate(glm::mat4(1), glm::vec3(0.5, 0, 0));
+		camToWorldMatrix = glm::rotate(camToWorldMatrix, 0.2f, glm::vec3(0, 1, 0));
+		renderer.SetUniformData(lastTime, camToWorldMatrix, invProjectionMatrix);
 	}
 
 	void HandleTime() {
@@ -61,6 +60,7 @@ public:
 private:
 	VulkanCore vulkanCore;
 	Renderer renderer;
+	glm::mat4 invProjectionMatrix;
 
 	float lastFrameTime;
 	double lastTime;

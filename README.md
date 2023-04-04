@@ -1,15 +1,11 @@
 # Raytracer Test
 
-A test project using Vulkan to build a compute-shader-based raytracer.
-
-Currently we support compute-shader-based raytracing with multi-bounce and multi-ray per pixel. We only support spheres for the time being.
+A raytracer built with Vulkan and C++20 modules that supports realtime compute-shader-based raytracing with multi-bounce and multi-ray per pixel. We only support spheres for the time being.
 
 ![A demo image](Demo.jpg "A demo image")
 
 ## Roadmap
 
- * Fixing all Vulkan Validation Layer warnings
- * Use a matrix-projected camera
  * Resizing the viewport
  * Move the camera using glfw input
  * Support Cook-Torrence BRDF

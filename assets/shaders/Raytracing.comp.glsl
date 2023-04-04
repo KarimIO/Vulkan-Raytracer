@@ -185,6 +185,8 @@ vec3 MultiRaytrace(Sphere[numSpheres] spheres, Ray ray, inout uint seed) {
 }
 
 Ray CreateCameraRay(vec2 uv) {
+	uv = uv * 2 - 1;
+
 	vec3 origin = (ubo.cameraToWorld * vec4(0,0,0,1)).xyz;
 	vec3 direction = (ubo.cameraInverseProj * vec4(uv,0,1)).xyz;
 	direction = (ubo.cameraToWorld * vec4(direction,0)).xyz;
@@ -212,7 +214,7 @@ void main() {
 	spheres[1].material.emission = vec3(0);
 	spheres[1].material.roughness = 0.9;
 	
-	spheres[2].center = vec3(sin(ubo.time), 0, -3);
+	spheres[2].center = vec3(0, sin(ubo.time) * 0.5, -3);
 	spheres[2].radius = 0.5;
 	spheres[2].material.albedo = vec3(1.0, 1.0, 1.0);
 	spheres[2].material.emission = vec3(0);
@@ -226,24 +228,7 @@ void main() {
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
 
-	float aspectRatio = float(dim.x) / float(dim.y);
-	
-	float viewportHeight = 2.0;
-	float viewportWidth = aspectRatio * viewportHeight;
-	float focalLength = 2.0;
-	
-	vec3 origin = vec3(0, 0, 0);
-	vec3 horizontal = vec3(viewportWidth, 0, 0);
-	vec3 vertical = vec3(0, viewportHeight, 0);
-	vec3 lowerLeftCorner = origin - horizontal/2 - vertical/2 - vec3(0, 0, focalLength);
-
-	vec3 fwd = vec3(0, 0, 1);
-	vec3 dir = lowerLeftCorner + uv.x * horizontal + uv.y * vertical - origin;
-
-	// Ray ray = CreateCameraRay(uv);
-	Ray ray;
-	ray.origin = origin;
-	ray.dir = normalize(dir);
+	Ray ray = CreateCameraRay(uv);
 
 	uint randomSeed = gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
 	vec3 randomDir = GetSeededRandomDir(randomSeed);
