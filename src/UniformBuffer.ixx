@@ -38,8 +38,8 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 3;
-		ubo.numRaysPerPixel = 150;
+		ubo.maxRayBounceCount = 2;
+		ubo.numRaysPerPixel = 50;
 
 		memcpy(uniformBuffersMapped[0], &ubo, sizeof(ubo));
 	}
