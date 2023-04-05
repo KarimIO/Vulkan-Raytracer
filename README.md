@@ -32,13 +32,24 @@ You can control the camera using WASD / Arrow keys.
  * [STB Image](https://github.com/nothings/stb/blob/master/stb_image.h)
  * [Vulkan](https://vulkan.lunarg.com/)
 
+### Setting Up C++ For Modules
+
+I decided to use this as an opportunity to practice with C++20 modules as well. They are still experimental in every toolchain, but they're a lot simpler to work with. Intellisense does not play nicely with it though.
+
+To use modules with Visual Studio, use versions 2019 or 2022, I recommend the latter. Make sure to install the "Desktop Development with C++" workload, and add "C++ Modules for v143 build tools (x64/x86 - experimental)" in the individual components section.
+Continue to set up the project with [this tutorial.](https://learn.microsoft.com/en-us/cpp/cpp/modules-cpp?view=msvc-170)
+
+For other systems, you can use the following links. Note that I have not built with other toolchains so I can't verify how they work:
+ * [GCC](https://gcc.gnu.org/onlinedocs/gcc/C_002b_002b-Modules.html)
+ * [Clang](https://blog.ecosta.dev/en/tech/cpp-modules-with-clang)
+
 ### Build Shaders
 
 Run the following commands with `...` replaced with relevant paths and `x.x.x.x` replaced with relevant version:
 ```
-...\VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=vertex ParticleSystem.vert.glsl -o vert.spv
-...\VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=fragment ParticleSystem.frag.glsl -o frag.spv
-...\VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=compute ParticleSystem.comp.glsl -o comp.spv
+.../VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=vertex Fullscreen.vert.glsl -o Fullscreen.vert.spv
+.../VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=fragment Fullscreen.frag.glsl -o Raytacing.frag.glsl
+.../VulkanSDK/x.x.x.x/Bin/glslc.exe -fshader-stage=compute Raytacing.comp.glsl -o Raytacing.comp.glsl
 ```
 
 ### Build Project
