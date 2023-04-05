@@ -202,25 +202,25 @@ Ray CreateCameraRay(vec2 uv) {
 void main() {
 	Sphere spheres[numSpheres];
 
-	spheres[0].center = vec3(-0.9, 0.2, -3);
+	spheres[0].center = vec3(-0.9, 0.2, 0);
 	spheres[0].radius = 0.4;
 	spheres[0].material.albedo = vec3(0.05,0.06,0.8);
 	spheres[0].material.emission = vec3(0);
 	spheres[0].material.roughness = 0.95;
 	
-	spheres[1].center = vec3(0, 5.5, -3);
+	spheres[1].center = vec3(0, 5.5, 0);
 	spheres[1].radius = 5;
 	spheres[1].material.albedo = vec3(0.99,0.95,0.90);
 	spheres[1].material.emission = vec3(0);
 	spheres[1].material.roughness = 0.9;
 	
-	spheres[2].center = vec3(0, sin(ubo.time) * 0.5, -3);
+	spheres[2].center = vec3(0, sin(ubo.time) * 0.5, 0);
 	spheres[2].radius = 0.5;
 	spheres[2].material.albedo = vec3(1.0, 1.0, 1.0);
 	spheres[2].material.emission = vec3(0);
 	spheres[2].material.roughness = 0.05;
 	
-	spheres[3].center = vec3(1.2, 0, -3);
+	spheres[3].center = vec3(1.2, 0, 0);
 	spheres[3].radius = 0.5;
 	spheres[3].material.emission = vec3(5.5);
 	spheres[3].material.roughness = 0.0;

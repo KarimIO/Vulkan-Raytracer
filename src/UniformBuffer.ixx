@@ -56,9 +56,16 @@ public:
 	~UniformBuffer() {
 		VkDevice device = VulkanCore::GetDevice();
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-			vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+		for (size_t i = 0; i < uniformBuffers.size(); i++) {
+			if (uniformBuffers[i] != nullptr) {
+				vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+			}
+		}
+
+		for (size_t i = 0; i < uniformBuffersMemory.size(); i++) {
+			if (uniformBuffersMemory[i] != nullptr) {
+				vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+			}
 		}
 	}
 private:

@@ -516,6 +516,7 @@ private:
 
 		if (swapChain != nullptr) {
 			vkDestroySwapchainKHR(device, swapChain, nullptr);
+			swapChain = nullptr;
 		}
 	}
 
@@ -619,10 +620,10 @@ private:
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "Hello Triangle";
-		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+		appInfo.applicationVersion = VK_MAKE_VERSION(1, 1, 0);
 		appInfo.pEngineName = "No Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-		appInfo.apiVersion = VK_API_VERSION_1_0;
+		appInfo.apiVersion = VK_API_VERSION_1_1;
 
 		VkInstanceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -1113,26 +1114,26 @@ private:
 private:
 	GLFWwindow* window;
 
-	VkInstance instance;
+	VkInstance instance = VK_NULL_HANDLE;
 	VkDebugUtilsMessengerEXT debugMessenger;
-	VkSurfaceKHR surface;
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
 
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device;
+	VkDevice device = VK_NULL_HANDLE;
 
-	VkQueue graphicsQueue;
-	VkQueue computeQueue;
-	VkQueue presentQueue;
+	VkQueue graphicsQueue = VK_NULL_HANDLE;
+	VkQueue computeQueue = VK_NULL_HANDLE;
+	VkQueue presentQueue = VK_NULL_HANDLE;
 
-	VkSwapchainKHR swapChain;
+	VkSwapchainKHR swapChain = VK_NULL_HANDLE;
 	std::vector<VkImage> swapChainImages;
 	VkFormat swapChainImageFormat;
 	VkExtent2D swapChainExtent;
 	std::vector<VkImageView> swapChainImageViews;
 	std::vector<VkFramebuffer> swapChainFramebuffers;
 
-	VkRenderPass renderPass;
-	VkCommandPool commandPool;
+	VkRenderPass renderPass = VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 	std::vector<VkCommandBuffer> computeCommandBuffers;

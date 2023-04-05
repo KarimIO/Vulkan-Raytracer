@@ -6,6 +6,7 @@ import <GLFW/glfw3.h>;
 
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
+import <glm/gtc/quaternion.hpp>;
 
 import Renderer;
 import VulkanCore;
@@ -27,6 +28,7 @@ public:
 		}
 
 		vulkanCore.ShowWindow();
+		HandleTime();
 
 		std::cout << "Initialized Raytracer Engine.\n";
 		return true;
@@ -51,7 +53,7 @@ public:
 	void HandleInput() {
 		float deltaTime = lastFrameTime;
 		float speed = 1.0f;
-		float mouseSpeed = 10.0f;
+		float mouseSpeed = 1.0f;
 
 		int xpos, ypos;
 		vulkanCore.GetMousePos(xpos, ypos);
@@ -60,19 +62,28 @@ public:
 		vulkanCore.GetSize(width, height);
 		vulkanCore.SetMousePos(width / 2, height / 2);
 
-		horizontalAngle += mouseSpeed * deltaTime * float(1024 / 2 - xpos);
-		verticalAngle += mouseSpeed * deltaTime * float(768 / 2 - ypos);
+		horizontalAngle += mouseSpeed * deltaTime * float(width / 2 - xpos);
+		verticalAngle += mouseSpeed * deltaTime * float(height / 2 - ypos);
 
-		glm::vec3 forward(0, 0, -1);
+		const float maxAngle = 1.55f;
+		if (verticalAngle < -maxAngle) {
+			verticalAngle = -maxAngle;
+		}
+		else if (verticalAngle > maxAngle) {
+			verticalAngle = maxAngle;
+		}
 
-		glm::vec3 right = glm::vec3(1, 0, 0);
+		glm::quat rotation = glm::quat(glm::vec3(verticalAngle, horizontalAngle, 0.0f));
+
+		cameraForward = rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		glm::vec3 right = rotation * glm::vec3(-1.0f, 0.0f, 0.0f);
 
 		if (vulkanCore.GetKey(GLFW_KEY_UP) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_W) == GLFW_PRESS) {
-			cameraPosition += forward * deltaTime * speed;
+			cameraPosition += cameraForward * deltaTime * speed;
 		}
 
 		if (vulkanCore.GetKey(GLFW_KEY_DOWN) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_S) == GLFW_PRESS) {
-			cameraPosition -= forward * deltaTime * speed;
+			cameraPosition -= cameraForward * deltaTime * speed;
 		}
 
 		if (vulkanCore.GetKey(GLFW_KEY_RIGHT) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_D) == GLFW_PRESS) {
@@ -85,9 +96,13 @@ public:
 	}
 
 	void SetUniformData() {
-		glm::mat4 camToWorldMatrix = glm::translate(glm::mat4(1), cameraPosition);
-		camToWorldMatrix = glm::rotate(camToWorldMatrix, 0.2f, glm::vec3(0, 1, 0));
-		renderer.SetUniformData(lastTime, camToWorldMatrix, invProjectionMatrix);
+		glm::mat4 viewMatrix = glm::inverse(glm::lookAt(
+			cameraPosition, // the position of your camera, in world space
+			cameraPosition + cameraForward,   // where you want to look at, in world space
+			glm::vec3(0,1,0)        // probably glm::vec3(0,1,0), but (0,-1,0) would make you looking upside-down, which can be great too
+		));
+
+		renderer.SetUniformData(lastTime, viewMatrix, invProjectionMatrix);
 	}
 
 	void HandleTime() {
@@ -101,7 +116,8 @@ private:
 	Renderer renderer;
 
 	glm::mat4 invProjectionMatrix;
-	glm::vec3 cameraPosition = glm::vec3(0, 0, 0);
+	glm::vec3 cameraPosition = glm::vec3(0, 0, -3);
+	glm::vec3 cameraForward;
 	float horizontalAngle = 0.0f;
 	float verticalAngle = 0.0f;
 
