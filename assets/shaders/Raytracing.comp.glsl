@@ -7,6 +7,8 @@ layout(binding = 1) uniform UniformBufferObject {
 	mat4 cameraToWorld;
 	mat4 cameraInverseProj;
 	float time;
+	int maxRayBounceCount;
+	int numRaysPerPixel;
 } ubo;
 
 const int numSpheres = 4;
@@ -152,8 +154,7 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 	
 	Ray ray = originalRay;
 
-	int maxBounceCount = 3;
-	for (int i = 0; i <= maxBounceCount; ++i) {
+	for (int i = 0; i <= ubo.maxRayBounceCount; ++i) {
 		HitInfo hitInfo = CalculateRayHit(spheres, ray);
 		if (hitInfo.isHit) {
 			Material material = hitInfo.material;
@@ -176,12 +177,11 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 vec3 MultiRaytrace(Sphere[numSpheres] spheres, Ray ray, inout uint seed) {
 	vec3 totalLight = vec3(0.0f);
 
-	int numRaysPerPixel = 100;
-	for (int i = 0; i < numRaysPerPixel; ++i) {
+	for (int i = 0; i < ubo.numRaysPerPixel; ++i) {
 		totalLight += Raytrace(spheres, ray, seed);
 	}
 
-	return totalLight / numRaysPerPixel;
+	return totalLight / ubo.numRaysPerPixel;
 }
 
 Ray CreateCameraRay(vec2 uv) {

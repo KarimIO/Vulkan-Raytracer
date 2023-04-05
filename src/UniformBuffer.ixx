@@ -9,6 +9,8 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 cameraToWorld;
 	alignas(16) glm::mat4 cameraInverseProj;
 	float time;
+	int maxRayBounceCount;
+	int numRaysPerPixel;
 };
 
 export class UniformBuffer {
@@ -36,6 +38,8 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
+		ubo.maxRayBounceCount = 3;
+		ubo.numRaysPerPixel = 150;
 
 		memcpy(uniformBuffersMapped[0], &ubo, sizeof(ubo));
 	}
