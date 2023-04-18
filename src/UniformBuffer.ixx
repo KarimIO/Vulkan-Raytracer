@@ -5,56 +5,39 @@ import <glm/glm.hpp>;
 import <vulkan/vulkan.h>;
 import VulkanCore;
 
-struct UniformBufferObject {
-	alignas(16) glm::mat4 cameraToWorld;
-	alignas(16) glm::mat4 cameraInverseProj;
-	float time;
-	int maxRayBounceCount;
-	int numRaysPerPixel;
-};
-
 export class UniformBuffer {
-	const int MAX_FRAMES_IN_FLIGHT = 2;
+	size_t uniformBufferCount;
+	uint32_t bufferSize;
+
 public:
-	void Initialize() {
+	void Initialize(size_t uniformBufferCount, uint32_t bufferSize) {
+		this->uniformBufferCount = uniformBufferCount;
+		this->bufferSize = bufferSize;
+
 		VkDevice device = VulkanCore::GetDevice();
-		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+		VkDeviceSize uboSize = bufferSize;
 
-		uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-		uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-		uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
+		uniformBuffers.resize(uniformBufferCount);
+		uniformBuffersMemory.resize(uniformBufferCount);
+		uniformBuffersMapped.resize(uniformBufferCount);
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-			VulkanCore::CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+		for (size_t i = 0; i < uniformBufferCount; i++) {
+			VulkanCore::CreateBuffer(uboSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
 			vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 		}
 	}
 
-	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
-		uint32_t currentFrame = VulkanCore::GetVulkanCoreInstance().GetCurrentFrame();
-
-		UniformBufferObject ubo{};
-		ubo.cameraToWorld = cameraToWorld;
-		ubo.cameraInverseProj = cameraInverseProj;
-		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 2;
-		ubo.numRaysPerPixel = 50;
-
-		memcpy(uniformBuffersMapped[0], &ubo, sizeof(ubo));
+	void* GetMappedBuffer(size_t i) {
+		return uniformBuffersMapped[i];
 	}
 
 	uint32_t GetSize() {
-		return sizeof(UniformBufferObject);
+		return bufferSize;
 	}
 
 	VkBuffer GetUniformBuffer(uint32_t i) {
 		return uniformBuffers[i];
-	}
-
-	VkBuffer GetCurrentUniformBuffer() {
-		uint32_t currentFrame = VulkanCore::GetVulkanCoreInstance().GetCurrentFrame();
-		return uniformBuffers[currentFrame];
 	}
 
 	~UniformBuffer() {

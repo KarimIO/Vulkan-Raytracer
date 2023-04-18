@@ -50,6 +50,14 @@ const std::vector<uint16_t> indices = {
 	0, 2, 1, 3, 2, 0
 };
 
+struct UniformBufferObject {
+	alignas(16) glm::mat4 cameraToWorld;
+	alignas(16) glm::mat4 cameraInverseProj;
+	float time;
+	int maxRayBounceCount;
+	int numRaysPerPixel;
+};
+
 export class Renderer {
 public:
 	bool Initialize(VulkanCore* vulkanCore) {
@@ -66,15 +74,15 @@ public:
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		indexBuffer.Initialize(static_cast<const void*>(indices.data()), indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-		uniformBuffer.Initialize();
+		uniformBuffer.Initialize(2, sizeof(UniformBufferObject));
 
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
 
 		DescriptorPoolBuilder()
-			.WithStorageImages(1)
-			.WithUniformBuffers(1)
-			.WithImageSamplers(1)
+			.WithStorageImages(MAX_FRAMES_IN_FLIGHT)
+			.WithUniformBuffers(MAX_FRAMES_IN_FLIGHT)
+			.WithImageSamplers(MAX_FRAMES_IN_FLIGHT)
 			.Build(descriptorPool);
 
 		descriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
@@ -100,7 +108,14 @@ public:
 	}
 
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
-		uniformBuffer.SetUniformData(time, cameraToWorld, cameraInverseProj);
+		uint32_t currentFrame = vulkanCore->GetCurrentFrame();
+
+		UniformBufferObject& ubo = *static_cast<UniformBufferObject*>(uniformBuffer.GetMappedBuffer(currentFrame));
+		ubo.cameraToWorld = cameraToWorld;
+		ubo.cameraInverseProj = cameraInverseProj;
+		ubo.time = static_cast<float>(time);
+		ubo.maxRayBounceCount = 2;
+		ubo.numRaysPerPixel = 50;
 	}
 
 	void Render() {
@@ -137,7 +152,7 @@ public:
 
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipeline());
 
-		VkDescriptorSet descriptorSet = computeDescriptorSet.GetDescriptorSet();
+		VkDescriptorSet descriptorSet = computeDescriptorSet.GetDescriptorSet(vulkanCore->GetCurrentFrame());
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 
 		vkCmdDispatch(commandBuffer, screenWidth / 16, screenHeight / 16, 1);
@@ -192,7 +207,7 @@ public:
 
 		vkCmdBindIndexBuffer(commandBuffer, indexBuffer.GetBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-		VkDescriptorSet descriptorSetRef = descriptorSet.GetDescriptorSet();
+		VkDescriptorSet descriptorSetRef = descriptorSet.GetDescriptorSet(vulkanCore->GetCurrentFrame());
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.GetPipelineLayout(), 0, 1, &descriptorSetRef, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
