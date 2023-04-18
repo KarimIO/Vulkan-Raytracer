@@ -16,25 +16,27 @@ public:
 	void Initialize(int width, int height) {
 		VkDevice device = VulkanCore::GetDevice();
 
-		VulkanCore::CreateImage(
-			width,
-			height,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			image,
-			imageMemory
-		);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+			VulkanCore::CreateImage(
+				width,
+				height,
+				VK_FORMAT_R8G8B8A8_UNORM,
+				VK_IMAGE_TILING_OPTIMAL,
+				VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				images[i],
+				imageMemories[i]
+			);
 
-		VulkanCore::TransitionImageLayout(
-			image,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_GENERAL
-		);
-		
-		imageView = VulkanCore::CreateImageView(image, VK_FORMAT_R8G8B8A8_UNORM);
+			VulkanCore::TransitionImageLayout(
+				images[i],
+				VK_FORMAT_R8G8B8A8_UNORM,
+				VK_IMAGE_LAYOUT_UNDEFINED,
+				VK_IMAGE_LAYOUT_GENERAL
+			);
+
+			imageViews[i] = VulkanCore::CreateImageView(images[i], VK_FORMAT_R8G8B8A8_UNORM);
+		}
 	}
 
 	void Resize(int width, int height) {
@@ -43,8 +45,8 @@ public:
 		Initialize(width, height);
 	}
 
-	VkImageView GetImageView() {
-		return imageView;
+	VkImageView GetImageView(size_t i) {
+		return imageViews[i];
 	}
 
 	~RaytracerTargetImage() {
@@ -54,23 +56,25 @@ public:
 	void Cleanup() {
 		VkDevice device = VulkanCore::GetDevice();
 
-		if (imageView != nullptr) {
-			vkDestroyImageView(device, imageView, nullptr);
-			imageView = nullptr;
-		}
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+			if (imageViews[i] != nullptr) {
+				vkDestroyImageView(device, imageViews[i], nullptr);
+				imageViews[i] = nullptr;
+			}
 
-		if (image != nullptr) {
-			vkDestroyImage(device, image, nullptr);
-			image = nullptr;
-		}
+			if (images[i] != nullptr) {
+				vkDestroyImage(device, images[i], nullptr);
+				images[i] = nullptr;
+			}
 
-		if (imageMemory != nullptr) {
-			vkFreeMemory(device, imageMemory, nullptr);
-			imageMemory = nullptr;
+			if (imageMemories[i] != nullptr) {
+				vkFreeMemory(device, imageMemories[i], nullptr);
+				imageMemories[i] = nullptr;
+			}
 		}
 	}
 private:
-	VkImage image = nullptr;
-	VkImageView imageView = nullptr;
-	VkDeviceMemory imageMemory = nullptr;
+	std::array<VkImage, MAX_FRAMES_IN_FLIGHT> images;
+	std::array<VkImageView, MAX_FRAMES_IN_FLIGHT> imageViews;
+	std::array<VkDeviceMemory, MAX_FRAMES_IN_FLIGHT> imageMemories;
 };

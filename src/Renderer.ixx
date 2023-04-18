@@ -110,12 +110,15 @@ public:
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
 		uint32_t currentFrame = vulkanCore->GetCurrentFrame();
 
-		UniformBufferObject& ubo = *static_cast<UniformBufferObject*>(uniformBuffer.GetMappedBuffer(currentFrame));
+		UniformBufferObject ubo = {};
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 		ubo.maxRayBounceCount = 2;
 		ubo.numRaysPerPixel = 50;
+
+		void* mappedMemory = uniformBuffer.GetMappedBuffer(currentFrame);
+		memcpy(mappedMemory, &ubo, sizeof(ubo));
 	}
 
 	void Render() {
