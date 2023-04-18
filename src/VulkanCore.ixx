@@ -6,6 +6,15 @@ import <GLFW/glfw3.h>;
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+const float B_IN_KB = 1024;
+const float KB_IN_MB = 1024;
+const float MB_IN_GB = 1024;
+const float HEAP_SIZE_IN_GB_MULTIPLIER = 1.0f / B_IN_KB / KB_IN_MB / MB_IN_GB;
+
+const size_t DISCRETE_GPU_BONUS = 200;
+const size_t INTEGRATED_GPU_BONUS = 100;
+const float HEAP_SCORE_MULTIPLIER = 10.0f;
+
 const std::vector<const char*> validationLayers = {
 	"VK_LAYER_KHRONOS_validation"
 };
@@ -686,16 +695,29 @@ private:
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
 
-		for (const auto& device : devices) {
-			if (IsDeviceSuitable(device)) {
-				physicalDevice = device;
-				break;
+		size_t bestDeviceIndex = 0;
+		size_t bestDeviceScore = 0;
+
+		for (size_t i = 0; i < deviceCount; ++i) {
+			VkPhysicalDevice device = devices[i];
+			size_t score = GetDeviceScore(device);
+			if (score > bestDeviceScore) {
+				bestDeviceIndex = i;
+				bestDeviceScore = score;
 			}
 		}
 
-		if (physicalDevice == VK_NULL_HANDLE) {
+		physicalDevice = devices[bestDeviceIndex];
+
+		if (bestDeviceScore == 0 || physicalDevice == VK_NULL_HANDLE) {
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
+
+
+		VkPhysicalDeviceProperties gpuProps{};
+		vkGetPhysicalDeviceProperties(physicalDevice, &gpuProps);
+
+		std::cout << "Using Device: " << gpuProps.deviceName << '\n';
 	}
 
 	void CreateLogicalDevice() {
@@ -1002,7 +1024,7 @@ private:
 		return details;
 	}
 
-	bool IsDeviceSuitable(VkPhysicalDevice device) {
+	size_t GetDeviceScore(VkPhysicalDevice device) {
 		QueueFamilyIndices indices = FindQueueFamilies(device);
 
 		bool extensionsSupported = CheckDeviceExtensionSupport(device);
@@ -1013,7 +1035,36 @@ private:
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		if (!indices.IsComplete() || !extensionsSupported || !swapChainAdequate) {
+			return 0;
+		}
+
+		VkPhysicalDeviceProperties gpuProps{};
+		vkGetPhysicalDeviceProperties(device, &gpuProps);
+
+		size_t gpuTypeScore = 0;
+		if (gpuProps.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+			gpuTypeScore += DISCRETE_GPU_BONUS;
+		}
+		else if (gpuProps.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU) {
+			gpuTypeScore += INTEGRATED_GPU_BONUS;
+		}
+
+		VkPhysicalDeviceMemoryProperties memoryProps{};
+		vkGetPhysicalDeviceMemoryProperties(device, &memoryProps);
+
+		auto heapsPointer = memoryProps.memoryHeaps;
+		auto heaps = std::vector<VkMemoryHeap>(heapsPointer, heapsPointer + memoryProps.memoryHeapCount);
+
+		float heapScore = 0;
+		for (const auto& heap : heaps) {
+			if (heap.flags & VkMemoryHeapFlagBits::VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+				heapScore += heap.size * HEAP_SIZE_IN_GB_MULTIPLIER * HEAP_SCORE_MULTIPLIER;
+				break;
+			}
+		}
+
+		return static_cast<size_t>(heapScore + gpuTypeScore);
 	}
 
 	bool CheckDeviceExtensionSupport(VkPhysicalDevice device) {

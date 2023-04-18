@@ -36,7 +36,7 @@ public:
 		return bufferSize;
 	}
 
-	VkBuffer GetUniformBuffer(uint32_t i) {
+	VkBuffer GetUniformBuffer(size_t i) {
 		return uniformBuffers[i];
 	}
 
