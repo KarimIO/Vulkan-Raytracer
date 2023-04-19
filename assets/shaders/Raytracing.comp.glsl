@@ -9,13 +9,16 @@ layout(binding = 1) uniform UniformBufferObject {
 	float time;
 	int maxRayBounceCount;
 	int numRaysPerPixel;
+
+	vec3 sunLightDirection;
+	vec3 skyColor;
+	vec3 horizonColor;
+	vec3 groundColor;
+	float sunFocus;
+	float sunIntensity;
 } ubo;
 
 const int numSpheres = 4;
-
-vec3 skyColor = vec3(0.11, 0.36, 0.57);
-vec3 horizonColor = vec3(0.83, 0.82, 0.67);
-vec3 groundColor = vec3(0.2, 0.2, 0.2);
 
 struct Material {
 	vec3 albedo;
@@ -79,19 +82,15 @@ HitInfo IntersectSphere(Sphere sphere, Ray ray) {
 }
 
 vec3 GetSkyColor(vec3 dir) {
-	vec3 sunLightDirection = normalize(vec3(0.2, 0.6, 1));
-	float sunFocus = 200.0f;
-	float sunIntensity = 10.0f;
-
 	float skyGradientTransition = pow(smoothstep(0.0f, -0.4f, dir.y), 0.35f);
-	vec3 skyGradient = mix(horizonColor, skyColor, skyGradientTransition);
+	vec3 skyGradient = mix(ubo.horizonColor, ubo.skyColor, skyGradientTransition);
 	float groundToSkyTransition = smoothstep(-0.01f, 0.0f, dir.y);
 
-	float sun = pow(max(0, dot(normalize(dir), -sunLightDirection)), sunFocus) * sunIntensity;
+	float sun = pow(max(0, dot(normalize(dir), -ubo.sunLightDirection)), ubo.sunFocus) * ubo.sunIntensity;
 	float sunMask = groundToSkyTransition <= 0 ? 1.0f : 0.0f;
 	float sunFactor = sun * sunMask;
 
-	return mix(skyGradient, groundColor, groundToSkyTransition) + sunFactor;
+	return mix(skyGradient, ubo.groundColor, groundToSkyTransition) + sunFactor;
 }
 
 HitInfo CalculateRayHit(Sphere[numSpheres] spheres, Ray ray) {

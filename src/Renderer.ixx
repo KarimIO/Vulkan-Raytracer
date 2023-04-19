@@ -56,6 +56,12 @@ struct UniformBufferObject {
 	float time;
 	int maxRayBounceCount;
 	int numRaysPerPixel;
+	alignas(16) glm::vec3 sunLightDirection;
+	alignas(16) glm::vec3 skyColor = glm::vec3(0.11, 0.36, 0.57);
+	alignas(16) glm::vec3 horizonColor = glm::vec3(0.83, 0.82, 0.67);
+	alignas(16) glm::vec3 groundColor = glm::vec3(0.2, 0.2, 0.2);
+	float sunFocus = 200.0f;
+	float sunIntensity = 10.0f;
 };
 
 export class Renderer {
@@ -110,12 +116,20 @@ public:
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
 		uint32_t currentFrame = vulkanCore->GetCurrentFrame();
 
-		UniformBufferObject ubo = {};
+		UniformBufferObject ubo{};
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 		ubo.maxRayBounceCount = 2;
-		ubo.numRaysPerPixel = 50;
+		ubo.numRaysPerPixel = 150;
+		double sunSin = glm::sin(time);
+		double sunCos = glm::cos(time);
+		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
+		ubo.skyColor = glm::vec3(0.11, 0.36, 0.57);
+		ubo.horizonColor = glm::vec3(0.83, 0.82, 0.67);
+		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
+		ubo.sunFocus = 200.0f;
+		ubo.sunIntensity = 20.0f;
 
 		void* mappedMemory = uniformBuffer.GetMappedBuffer(currentFrame);
 		memcpy(mappedMemory, &ubo, sizeof(ubo));
