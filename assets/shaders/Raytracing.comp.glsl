@@ -18,12 +18,12 @@ layout(binding = 1) uniform UniformBufferObject {
 	float sunIntensity;
 } ubo;
 
-const int numSpheres = 4;
+const int NUM_SPHERES = 11;
 
 struct Material {
 	vec3 albedo;
 	vec3 emission;
-	float metallic;
+	float metalness;
 	float roughness;
 };
 
@@ -110,13 +110,13 @@ vec3 GetSkyColor(vec3 dir) {
 	return SRGBToLinear(finalSkyColor);
 }
 
-HitInfo CalculateRayHit(Sphere[numSpheres] spheres, Ray ray) {
+HitInfo CalculateRayHit(Sphere[NUM_SPHERES] spheres, Ray ray) {
 	HitInfo closestHit;
 	closestHit.isHit = false;
 	const float positiveInfinity = uintBitsToFloat(0x7F800000);
 	closestHit.hitDistance = 100000000.0f;
 
-	for (int i = 0; i < numSpheres; ++i) {
+	for (int i = 0; i < NUM_SPHERES; ++i) {
 		Sphere sphere = spheres[i];
 
 		HitInfo hitInfo = IntersectSphere(sphere, ray);
@@ -157,40 +157,19 @@ vec3 GetSeededRandomHemisphereDir(vec3 normal, inout uint seed) {
 	return randomDir * sign(dot(normal, randomDir));
 }
 
-vec3 GetRayBounceDir(vec3 normal, vec3 rayDir, float roughness, inout uint seed) {
+vec3 GetRayBounceDir(vec3 normal, vec3 rayDir, float roughness, float doSpecular, inout uint seed) {
 	vec3 diffuseDir = normalize(normal + GetSeededRandomHemisphereDir(normal, seed));
 	vec3 specularDir = reflect(rayDir, normal);
 
-	return mix(specularDir, diffuseDir, roughness);
+	vec3 specularAfterRoughness = mix(specularDir, diffuseDir, roughness * roughness);
+	return mix(diffuseDir, specularAfterRoughness, doSpecular);
 }
 
-vec3 BrdfFresnel(float cosTheta, vec3 f0) {
-	return f0 + (1.0 - f0) * pow(1.0 - cosTheta, 5.0);
+float BrdfFresnel(float cosTheta, float f0, float f90) {
+	return f0 + (f90 - f0) * pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 FSpecularCookTorrance(vec3 wi, vec3 wo, vec3 normal, vec3 albedoColor, float metalness) {
-	vec3 H = normalize(wi + wo);
-	float wiDotN = max(dot(wi, normal), 0.0f);
-	float woDotN = max(dot(wo, normal), 0.0f);
-	float cosTheta = max(dot(H, wo), 0.0f);
-	vec3 f0 = vec3(1); //mix(vec3(0.04), albedoColor, metalness);
-	vec3 fresnel = BrdfFresnel(cosTheta, f0);
-	return fresnel; // / (4 * woDotN * wiDotN);
-}
-
-// Cook-Torrance BRDF
-// Represents fr in Lo(p,wo)=Integral(fr(p,Wi,Wo) * Li(p,Wi) * dot(n, Wi) * dWi);
-vec3 Brdf(vec3 wi, vec3 wo, vec3 normal, vec3 albedoColor, float metalness) {
-	float kDiffuse = 1.0f;
-	const float PI = 3.14159f;
-	vec3 fLambert = albedoColor / PI;
-	vec3 fSpecular = FSpecularCookTorrance(wi, wo, normal, albedoColor, metalness);
-
-	// But kSpecular is considered in fSpecular so we don't need kSpecular here.
-	return fSpecular; // kDiffuse * fLambert + 
-}
-
-vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
+vec3 Raytrace(Sphere[NUM_SPHERES] spheres, Ray originalRay, inout uint seed) {
 	vec3 incomingLight = vec3(0);
 	vec3 rayColor = vec3(1);
 	
@@ -202,17 +181,18 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 			Material material = hitInfo.material;
 
 			vec3 wo = ray.dir;
-
-			ray.dir = GetRayBounceDir(hitInfo.normal, ray.dir, material.roughness, seed);
+			
+			float f0 = material.metalness;
+			float f90 = 1;
+			float cosTheta = -dot(hitInfo.normal, wo);
+			float specularChance = BrdfFresnel(cosTheta, f0, f90);
+			float doSpecular = (GetNormalizedSeededRandom(seed) < specularChance) ? 1.0f : 0.0f;
+			vec3 specularColor = mix(vec3(0.04), material.albedo, doSpecular);
+			ray.dir = GetRayBounceDir(hitInfo.normal, ray.dir, material.roughness, doSpecular, seed);
 			ray.origin = hitInfo.position + ray.dir * 0.001;
 
-			vec3 wi = ray.dir;
-			float nDotWi = dot(hitInfo.normal, wi);
-			float dW = 1.0f;
-			// vec3 reflectanceEquation = Brdf(wi, wo, hitInfo.normal, hitInfo.material.albedo, hitInfo.material.metallic); // * incomingLight * nDotWi * dW;
-
 			incomingLight += material.emission * rayColor;
-			rayColor *= hitInfo.material.albedo;
+			rayColor *= mix(material.albedo, specularColor, doSpecular);
 		}
 		else {
 			incomingLight += GetSkyColor(ray.dir) * rayColor;
@@ -223,7 +203,7 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 	return incomingLight;
 }
 
-vec3 MultiRaytrace(Sphere[numSpheres] spheres, Ray ray, inout uint seed) {
+vec3 MultiRaytrace(Sphere[NUM_SPHERES] spheres, Ray ray, inout uint seed) {
 	vec3 totalLight = vec3(0.0f);
 
 	for (int i = 0; i < ubo.numRaysPerPixel; ++i) {
@@ -259,30 +239,83 @@ vec3 ACESFilmicTonemapping(vec3 color) {
 }
 
 void main() {
-	Sphere spheres[numSpheres];
-
-	spheres[0].center = vec3(-0.9, 0.2, 0);
-	spheres[0].radius = 0.4;
-	spheres[0].material.albedo = vec3(0.05,0.06,0.8);
+	Sphere spheres[NUM_SPHERES];
+	
+	spheres[0].center = vec3(0, 11, 0);
+	spheres[0].radius = 10;
+	spheres[0].material.albedo = vec3(0.99,0.95,0.90);
 	spheres[0].material.emission = vec3(0);
-	spheres[0].material.roughness = 0.95;
-	
-	spheres[1].center = vec3(0, 5.5, 0);
-	spheres[1].radius = 5;
-	spheres[1].material.albedo = vec3(0.99,0.95,0.90);
+	spheres[0].material.roughness = 0.9;
+
+	spheres[1].center = vec3(-2, 0.2, 0);
+	spheres[1].radius = 0.4;
+	spheres[1].material.albedo = vec3(1.0);
+	spheres[1].material.metalness = 0;
 	spheres[1].material.emission = vec3(0);
-	spheres[1].material.roughness = 0.9;
+	spheres[1].material.roughness = 0.001;
 	
-	spheres[2].center = vec3(0, sin(ubo.time) * 0.5, 0);
-	spheres[2].radius = 0.5;
-	spheres[2].material.albedo = vec3(1.0, 1.0, 1.0);
+	spheres[2].center = vec3(-1, 0.2, 0);
+	spheres[2].radius = 0.4;
+	spheres[2].material.albedo = vec3(1.0);
+	spheres[2].material.metalness = 0;
 	spheres[2].material.emission = vec3(0);
-	spheres[2].material.roughness = 0.05;
+	spheres[2].material.roughness = 0.25;
 	
-	spheres[3].center = vec3(1.2, 0, 0);
-	spheres[3].radius = 0.5;
-	spheres[3].material.emission = vec3(5.5);
-	spheres[3].material.roughness = 0.0;
+	spheres[3].center = vec3(0, 0.2, 0);
+	spheres[3].radius = 0.4;
+	spheres[3].material.albedo = vec3(1.0);
+	spheres[3].material.metalness = 0;
+	spheres[3].material.emission = vec3(0);
+	spheres[3].material.roughness = 0.5;
+	
+	spheres[4].center = vec3(1, 0.2, 0);
+	spheres[4].radius = 0.4;
+	spheres[4].material.albedo = vec3(1.0);
+	spheres[4].material.metalness = 0;
+	spheres[4].material.emission = vec3(0);
+	spheres[4].material.roughness = 0.75;
+	
+	spheres[5].center = vec3(2, 0.2, 0);
+	spheres[5].radius = 0.4;
+	spheres[5].material.albedo = vec3(1.0);
+	spheres[5].material.metalness = 0;
+	spheres[5].material.emission = vec3(0);
+	spheres[5].material.roughness = 1;
+
+	spheres[6].center = vec3(-2, -1, 0);
+	spheres[6].radius = 0.4;
+	spheres[6].material.albedo = vec3(1.0);
+	spheres[6].material.metalness = 1;
+	spheres[6].material.emission = vec3(0);
+	spheres[6].material.roughness = 0.001;
+	
+	spheres[7].center = vec3(-1, -1, 0);
+	spheres[7].radius = 0.4;
+	spheres[7].material.albedo = vec3(1.0);
+	spheres[7].material.metalness = 1;
+	spheres[7].material.emission = vec3(0);
+	spheres[7].material.roughness = 0.25;
+	
+	spheres[8].center = vec3(0, -1, 0);
+	spheres[8].radius = 0.4;
+	spheres[8].material.albedo = vec3(1.0);
+	spheres[8].material.metalness = 1;
+	spheres[8].material.emission = vec3(0);
+	spheres[8].material.roughness = 0.5;
+	
+	spheres[9].center = vec3(1, -1, 0);
+	spheres[9].radius = 0.4;
+	spheres[9].material.albedo = vec3(1.0);
+	spheres[9].material.metalness = 1;
+	spheres[9].material.emission = vec3(0);
+	spheres[9].material.roughness = 0.75;
+	
+	spheres[10].center = vec3(2, -1, 0);
+	spheres[10].radius = 0.4;
+	spheres[10].material.albedo = vec3(1.0);
+	spheres[10].material.metalness = 1;
+	spheres[10].material.emission = vec3(0);
+	spheres[10].material.roughness = 1;
 	
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
