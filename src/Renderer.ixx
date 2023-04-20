@@ -110,7 +110,12 @@ public:
 	}
 
 	void ResizeFramebufferCallback(int width, int height) {
+		std::cout << "Resized to " << width << ", " << height << '\n';
+		screenWidth = width;
+		screenHeight = height;
 		raytracerTargetImage.Resize(width, height);
+		descriptorSet.UpdateTargetImage(raytracerTargetImage, sampler);
+		computeDescriptorSet.UpdateTargetImage(raytracerTargetImage, sampler);
 	}
 
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
@@ -152,7 +157,7 @@ public:
 				return;
 			}
 
-			RecordCommandBuffer(graphicsCommandBuffer);
+			RecordBlitCommandBuffer(graphicsCommandBuffer);
 			vulkanCore->SubmitRenderCommandBuffer(graphicsCommandBuffer);
 		}
 
@@ -172,14 +177,17 @@ public:
 		VkDescriptorSet descriptorSet = computeDescriptorSet.GetDescriptorSet(vulkanCore->GetCurrentFrame());
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.GetPipelineLayout(), 0, 1, &descriptorSet, 0, nullptr);
 
-		vkCmdDispatch(commandBuffer, screenWidth / 16, screenHeight / 16, 1);
+		uint32_t groupCountX = static_cast<uint32_t>(std::ceil(screenWidth / 16.0f));
+		uint32_t groupCountY = static_cast<uint32_t>(std::ceil(screenHeight / 16.0f));
+
+		vkCmdDispatch(commandBuffer, groupCountX, groupCountY, 1);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 			throw std::runtime_error("failed to record compute command buffer!");
 		}
 	}
 
-	void RecordCommandBuffer(VkCommandBuffer commandBuffer) {
+	void RecordBlitCommandBuffer(VkCommandBuffer commandBuffer) {
 		VkExtent2D swapChainExtent = vulkanCore->GetSwapchainExtent();
 
 		VkCommandBufferBeginInfo beginInfo{};

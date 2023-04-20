@@ -111,7 +111,7 @@ public:
 	}
 
 	void PassResizeFramebufferCallback(std::function<void(int&, int&)> func) {
-		resizeFramebufferCallback = func;
+		resizeFramebufferCallbacks.push_back(func);
 	}
 
 	void GetSize(int& width, int& height) {
@@ -593,7 +593,7 @@ private:
 			glfwDestroyWindow(window);
 		}
 
-		glfwTerminate();
+ 		glfwTerminate();
 	}
 
 	void OnResizeFramebuffer() {
@@ -605,7 +605,11 @@ private:
 		}
 
 		vkDeviceWaitIdle(device);
-		resizeFramebufferCallback(width, height);
+
+		for (auto callback : resizeFramebufferCallbacks) {
+			callback(width, height);
+		}
+
 		RecreateSwapChain();
 	}
 
@@ -1193,7 +1197,7 @@ private:
 	std::vector<VkFence> inFlightFences;
 	std::vector<VkFence> computeInFlightFences;
 
-	std::function<void(int&, int&)> resizeFramebufferCallback;
+	std::vector<std::function<void(int&, int&)>> resizeFramebufferCallbacks;
 
 	uint32_t currentSwapchainImageIndex = 0;
 	uint32_t currentFrame = 0;

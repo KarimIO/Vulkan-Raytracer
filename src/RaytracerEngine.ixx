@@ -25,6 +25,7 @@ public:
 			return false;
 		}
 
+		vulkanCore.PassResizeFramebufferCallback([&](int w, int h) { this->ResizeFramebufferCallback(w, h); });
 		vulkanCore.ShowWindow();
 		HandleTime();
 
@@ -37,6 +38,10 @@ public:
 
 	~RaytracerEngine() {
 		vulkanCore.HideWindow();
+	}
+
+	void ResizeFramebufferCallback(int width, int height) {
+		camera.CalculateProjectionMatrix(width, height);
 	}
 
 	void Run() {

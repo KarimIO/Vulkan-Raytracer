@@ -17,8 +17,11 @@ public:
 	void CalculateProjectionMatrix() {
 		int width, height;
 		VulkanCore::GetVulkanCoreInstance().GetSize(width, height);
+		CalculateProjectionMatrix(width, height);
+	}
 
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800.0f / (float)600.0f, 0.1f, 100.0f);
+	void CalculateProjectionMatrix(int width, int height) {
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
 		inverseProjectionMatrix = glm::inverse(projection);
 	}
 

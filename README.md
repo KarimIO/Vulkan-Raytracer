@@ -9,7 +9,6 @@ You can control the camera using WASD / Arrow keys.
 ## Roadmap
 
  * Resizing the viewport
- * Support Cook-Torrence BRDF
  * Adding support for triangles
  * Culling objects by AABB
  * Two-Coat Materials
