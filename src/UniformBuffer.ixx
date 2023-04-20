@@ -32,6 +32,11 @@ public:
 		return uniformBuffersMapped[i];
 	}
 
+	template<typename T>
+	T& GetMappedBuffer(size_t i) {
+		return *static_cast<T*>(uniformBuffersMapped[i]);
+	}
+
 	uint32_t GetSize() {
 		return bufferSize;
 	}

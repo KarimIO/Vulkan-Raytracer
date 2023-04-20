@@ -121,12 +121,12 @@ public:
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
 		uint32_t currentFrame = vulkanCore->GetCurrentFrame();
 
-		UniformBufferObject ubo{};
+		UniformBufferObject& ubo = uniformBuffer.GetMappedBuffer<UniformBufferObject>(currentFrame);
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 2;
-		ubo.numRaysPerPixel = 250;
+		ubo.maxRayBounceCount = 1;
+		ubo.numRaysPerPixel = 100;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
@@ -135,9 +135,6 @@ public:
 		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
 		ubo.sunFocus = 200.0f;
 		ubo.sunIntensity = 2.0f;
-
-		void* mappedMemory = uniformBuffer.GetMappedBuffer(currentFrame);
-		memcpy(mappedMemory, &ubo, sizeof(ubo));
 	}
 
 	void Render() {
