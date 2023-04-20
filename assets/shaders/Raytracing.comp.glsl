@@ -46,6 +46,22 @@ struct HitInfo {
 	Material material;
 };
 
+vec3 SRGBToLinear(vec3 inColor) {
+	vec3 outColor;
+	outColor.r = inColor.r <= 0.04045 ? (inColor.r / 12.92) : pow((inColor.r + 0.055) / 1.055, 2.4);
+	outColor.g = inColor.g <= 0.04045 ? (inColor.g / 12.92) : pow((inColor.g + 0.055) / 1.055, 2.4);
+	outColor.b = inColor.b <= 0.04045 ? (inColor.b / 12.92) : pow((inColor.b + 0.055) / 1.055, 2.4);
+	return outColor;
+}
+
+vec3 LinearToSRGB(vec3 inColor) {
+	vec3 outColor;
+	outColor.r = inColor.r <= 0.0031308 ? (inColor.r * 12.92) : 1.055 * pow(inColor.r, 1.0/2.4) - 0.055;
+	outColor.g = inColor.g <= 0.0031308 ? (inColor.g * 12.92) : 1.055 * pow(inColor.g, 1.0/2.4) - 0.055;
+	outColor.b = inColor.b <= 0.0031308 ? (inColor.b * 12.92) : 1.055 * pow(inColor.b, 1.0/2.4) - 0.055;
+	return outColor;
+}
+
 float HitSphere(vec3 center, float radius, vec3 origin, vec3 dir) {
 	vec3 oc = origin - center;
 	float a = dot(dir, dir);
@@ -90,7 +106,8 @@ vec3 GetSkyColor(vec3 dir) {
 	float sunMask = groundToSkyTransition <= 0 ? 1.0f : 0.0f;
 	float sunFactor = sun * sunMask;
 
-	return mix(skyGradient, ubo.groundColor, groundToSkyTransition) + sunFactor;
+	vec3 finalSkyColor = mix(skyGradient, ubo.groundColor, groundToSkyTransition) + sunFactor;
+	return SRGBToLinear(finalSkyColor);
 }
 
 HitInfo CalculateRayHit(Sphere[numSpheres] spheres, Ray ray) {
@@ -147,6 +164,32 @@ vec3 GetRayBounceDir(vec3 normal, vec3 rayDir, float roughness, inout uint seed)
 	return mix(specularDir, diffuseDir, roughness);
 }
 
+vec3 BrdfFresnel(float cosTheta, vec3 f0) {
+	return f0 + (1.0 - f0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 FSpecularCookTorrance(vec3 wi, vec3 wo, vec3 normal, vec3 albedoColor, float metalness) {
+	vec3 H = normalize(wi + wo);
+	float wiDotN = max(dot(wi, normal), 0.0f);
+	float woDotN = max(dot(wo, normal), 0.0f);
+	float cosTheta = max(dot(H, wo), 0.0f);
+	vec3 f0 = vec3(1); //mix(vec3(0.04), albedoColor, metalness);
+	vec3 fresnel = BrdfFresnel(cosTheta, f0);
+	return fresnel; // / (4 * woDotN * wiDotN);
+}
+
+// Cook-Torrance BRDF
+// Represents fr in Lo(p,wo)=Integral(fr(p,Wi,Wo) * Li(p,Wi) * dot(n, Wi) * dWi);
+vec3 Brdf(vec3 wi, vec3 wo, vec3 normal, vec3 albedoColor, float metalness) {
+	float kDiffuse = 1.0f;
+	const float PI = 3.14159f;
+	vec3 fLambert = albedoColor / PI;
+	vec3 fSpecular = FSpecularCookTorrance(wi, wo, normal, albedoColor, metalness);
+
+	// But kSpecular is considered in fSpecular so we don't need kSpecular here.
+	return fSpecular; // kDiffuse * fLambert + 
+}
+
 vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 	vec3 incomingLight = vec3(0);
 	vec3 rayColor = vec3(1);
@@ -158,11 +201,18 @@ vec3 Raytrace(Sphere[numSpheres] spheres, Ray originalRay, inout uint seed) {
 		if (hitInfo.isHit) {
 			Material material = hitInfo.material;
 
+			vec3 wo = ray.dir;
+
 			ray.dir = GetRayBounceDir(hitInfo.normal, ray.dir, material.roughness, seed);
 			ray.origin = hitInfo.position + ray.dir * 0.001;
 
+			vec3 wi = ray.dir;
+			float nDotWi = dot(hitInfo.normal, wi);
+			float dW = 1.0f;
+			// vec3 reflectanceEquation = Brdf(wi, wo, hitInfo.normal, hitInfo.material.albedo, hitInfo.material.metallic); // * incomingLight * nDotWi * dW;
+
 			incomingLight += material.emission * rayColor;
-			rayColor *= material.albedo;
+			rayColor *= hitInfo.material.albedo;
 		}
 		else {
 			incomingLight += GetSkyColor(ray.dir) * rayColor;
@@ -198,6 +248,16 @@ Ray CreateCameraRay(vec2 uv) {
 	return ray;
 }
 
+vec3 ACESFilmicTonemapping(vec3 color) {
+	float a = 2.51f;
+	float b = 0.03f;
+	float c = 2.43f;
+	float d = 0.59f;
+	float e = 0.14f;
+
+	return clamp((color*(a*color+b))/(color*(c*color+d)+e), 0, 1);
+}
+
 void main() {
 	Sphere spheres[numSpheres];
 
@@ -231,6 +291,16 @@ void main() {
 
 	uint randomSeed = gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
 	vec3 randomDir = GetSeededRandomDir(randomSeed);
-	vec4 pixelColor = vec4(MultiRaytrace(spheres, ray, randomSeed), 1);
-	imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), pixelColor);
+	vec3 pixelColor = MultiRaytrace(spheres, ray, randomSeed);
+
+	const float exposure = 0.8f;
+	pixelColor *= exposure;
+ 
+	// convert unbounded HDR color range to SDR color range
+	pixelColor = ACESFilmicTonemapping(pixelColor);
+ 
+	// convert from linear to sRGB for display
+	pixelColor = LinearToSRGB(pixelColor);
+
+	imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixelColor, 1));
 }
