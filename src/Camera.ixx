@@ -25,9 +25,18 @@ public:
 		inverseProjectionMatrix = glm::inverse(projection);
 	}
 
+	void ToggleInputEnabled() {
+		isInputEnabled = !isInputEnabled;
+		VulkanCore::GetVulkanCoreInstance().SetCursorVisible(!isInputEnabled);
+	}
+
 	void HandleInput(float deltaTime) {
+		if (!isInputEnabled) {
+			return;
+		}
+
 		VulkanCore& vulkanCore = VulkanCore::GetVulkanCoreInstance();
-		float speed = 1.0f;
+		float speed = 3.0f;
 		float mouseSpeed = 1.0f;
 
 		int xpos, ypos;
@@ -100,4 +109,6 @@ private:
 	
 	float horizontalAngle = 0.0f;
 	float verticalAngle = 0.0f;
+
+	bool isInputEnabled = true;
 };

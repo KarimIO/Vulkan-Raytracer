@@ -123,6 +123,14 @@ public:
 		}
 	}
 
+	void SetCursorVisible(bool isCursorVisible) {
+		glfwSetInputMode(window, GLFW_CURSOR, isCursorVisible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+	}
+
+	void Close() {
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+	}
+
 	bool ShouldClose() {
 		return glfwWindowShouldClose(window);
 	}

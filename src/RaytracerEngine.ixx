@@ -27,6 +27,7 @@ public:
 
 		vulkanCore.PassResizeFramebufferCallback([&](int w, int h) { this->ResizeFramebufferCallback(w, h); });
 		vulkanCore.ShowWindow();
+		vulkanCore.SetCursorVisible(true);
 		HandleTime();
 
 		camera.CalculateProjectionMatrix();
@@ -47,13 +48,27 @@ public:
 	void Run() {
 		while (!vulkanCore.ShouldClose()) {
 			HandleTime();
-			camera.HandleInput(deltaTime);
+			HandleInput();
 			SetUniformData();
 			vulkanCore.PollEvents();
 			renderer.Render();
 		}
 
 		vulkanCore.WaitUntilEndOfFrame();
+	}
+
+	void HandleInput() {
+		if (vulkanCore.GetKey(GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			vulkanCore.Close();
+		}
+		
+		bool isTabPressed = vulkanCore.GetKey(GLFW_KEY_TAB) == GLFW_PRESS;
+		if (isTabPressed && !wasTabPressed) {
+			camera.ToggleInputEnabled();
+		}
+		wasTabPressed = isTabPressed;
+
+		camera.HandleInput(deltaTime);
 	}
 
 	void SetUniformData() {
@@ -73,4 +88,5 @@ private:
 
 	float deltaTime;
 	double lastTime;
+	bool wasTabPressed;
 };
