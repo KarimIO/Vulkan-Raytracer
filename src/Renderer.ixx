@@ -126,7 +126,7 @@ public:
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 		ubo.maxRayBounceCount = 1;
-		ubo.numRaysPerPixel = 100;
+		ubo.numRaysPerPixel = 1;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
@@ -134,7 +134,7 @@ public:
 		ubo.horizonColor = glm::vec3(0.83, 0.82, 0.67);
 		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
 		ubo.sunFocus = 200.0f;
-		ubo.sunIntensity = 2.0f;
+		ubo.sunIntensity = 30.0f;
 	}
 
 	void Render() {
