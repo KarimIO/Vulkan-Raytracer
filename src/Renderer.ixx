@@ -50,7 +50,7 @@ const std::vector<uint16_t> indices = {
 	0, 2, 1, 3, 2, 0
 };
 
-struct UniformBufferObject {
+struct RenderUniformBufferObject {
 	alignas(16) glm::mat4 cameraToWorld;
 	alignas(16) glm::mat4 cameraInverseProj;
 	float time;
@@ -64,6 +64,70 @@ struct UniformBufferObject {
 	float sunIntensity = 10.0f;
 	float dofStrength;
 	float blurStrength;
+};
+
+struct Material {
+	alignas(16) glm::vec3 albedo = glm::vec3(0.0f, 0.0f, 0.0f);
+	alignas(16) glm::vec3 specular = glm::vec3(0.04f, 0.04f, 0.04f);
+	float specularChance = 0.04f;
+	float ior = 1.0f;
+	alignas(16) glm::vec3 emission = glm::vec3(0.0f, 0.0f, 0.0f);
+	float surfaceRoughness = 0.5f;
+	float refractionRoughness = 0.0f;
+	alignas(16) glm::vec3 transmissionColor = glm::vec3(0.0f, 0.0f, 0.0f);
+	float refractionChance = 0.0f;
+
+	static Material Emissive(glm::vec3 emission) {
+		Material material;
+		material.emission = emission;
+
+		return material;
+	}
+
+	static Material Diffuse(glm::vec3 albedoColor, float roughness, float ior) {
+		Material material;
+		material.albedo = albedoColor;
+		material.surfaceRoughness = roughness;
+		material.ior = ior;
+		material.specularChance = 0.04f;
+
+		return material;
+	}
+
+	static Material Metal(glm::vec3 specularColor, float roughness, float ior) {
+		Material material;
+		material.specular = specularColor;
+		material.surfaceRoughness = roughness;
+		material.ior = ior;
+		material.specularChance = 1.0f;
+
+		return material;
+	}
+
+	static Material Transmissive(glm::vec3 transmissionColor, float refractionRoughness, float ior) {
+		Material material;
+		material.transmissionColor = transmissionColor;
+		material.refractionRoughness = refractionRoughness;
+		material.ior = ior;
+		material.refractionChance = 1.0f;
+
+		return material;
+	}
+};
+
+struct MaterialUniformBufferObject {
+	Material materials[32];
+};
+
+struct Sphere {
+	alignas(16) glm::vec3 center;
+	float radius;
+	uint32_t materialIndex;
+};
+
+struct SphereUniformBufferObject {
+	uint32_t numSpheres;
+	Sphere spheres[64];
 };
 
 export class Renderer {
@@ -82,7 +146,12 @@ public:
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		indexBuffer.Initialize(static_cast<const void*>(indices.data()), indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-		uniformBuffer.Initialize(2, sizeof(UniformBufferObject));
+		renderUniformBuffer.Initialize(2, sizeof(RenderUniformBufferObject));
+		materialUniformBuffer.Initialize(1, sizeof(MaterialUniformBufferObject));
+		sphereUniformBuffer.Initialize(1, sizeof(SphereUniformBufferObject));
+
+		SetupMaterials();
+		SetupSpheres();
 
 		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
 		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
@@ -94,7 +163,7 @@ public:
 			.Build(descriptorPool);
 
 		descriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
-		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, uniformBuffer, descriptorPool);
+		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, renderUniformBuffer, materialUniformBuffer, sphereUniformBuffer, descriptorPool);
 		VkDescriptorSetLayout descriptorSetLayout = descriptorSet.GetLayout();
 
 		computePipeline.Initialize("assets/shaders/Raytracing.comp.spv", computeDescriptorSet);
@@ -120,10 +189,44 @@ public:
 		computeDescriptorSet.UpdateTargetImage(raytracerTargetImage, sampler);
 	}
 
+	void SetupSpheres() {
+		SphereUniformBufferObject& ubo = sphereUniformBuffer.GetMappedBuffer<SphereUniformBufferObject>();
+
+		uint32_t currentSphere = 1;
+		ubo.spheres[0] = Sphere{ glm::vec3(0, 11, 0), 10, 0 };
+
+		for (uint32_t i = 0; i < 3; ++i) {
+			for (int j = -2; j <= 2; ++j) {
+				ubo.spheres[++currentSphere] = Sphere{ glm::vec3(j, 0.2f - i * 1.2f, 0.0f), 0.4f, currentSphere };
+			}
+		}
+
+		ubo.numSpheres = currentSphere + 1;
+	}
+
+	void SetupMaterials() {
+		MaterialUniformBufferObject& ubo = materialUniformBuffer.GetMappedBuffer<MaterialUniformBufferObject>();
+		ubo.materials[0] = Material::Emissive(glm::vec3(4.0f));
+
+		size_t materialIndex = 1;
+
+		for (int i = 0; i < 5; ++i) {
+			ubo.materials[materialIndex++] = Material::Diffuse(glm::vec3(1.0f, 0.0f, 0.0f), 0.0f + i * 0.2f, 1.5f);
+		}
+
+		for (int i = 0; i < 5; ++i) {
+			ubo.materials[materialIndex++] = Material::Metal(glm::vec3(0.944, 0.776f, 0.373f), 0.0f + i * 0.2f, 2.950f);
+		}
+
+		for (int i = 0; i < 5; ++i) {
+			ubo.materials[materialIndex++] = Material::Transmissive(glm::vec3(1.0f, 1.0f, 1.0f), 0.0f + i * 0.2f, 1.52f);
+		}
+	}
+
 	void SetUniformData(double time, glm::mat4& cameraToWorld, glm::mat4& cameraInverseProj) {
 		uint32_t currentFrame = vulkanCore->GetCurrentFrame();
 
-		UniformBufferObject& ubo = uniformBuffer.GetMappedBuffer<UniformBufferObject>(currentFrame);
+		RenderUniformBufferObject& ubo = renderUniformBuffer.GetMappedBuffer<RenderUniformBufferObject>(currentFrame);
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
@@ -253,7 +356,9 @@ private:
 	DescriptorSet descriptorSet;
 	ComputeDescriptorSet computeDescriptorSet;
 	DescriptorPool descriptorPool;
-	UniformBuffer uniformBuffer;
+	UniformBuffer renderUniformBuffer;
+	UniformBuffer materialUniformBuffer;
+	UniformBuffer sphereUniformBuffer;
 	RaytracerTargetImage raytracerTargetImage;
 	Texture texture;
 	Sampler sampler;

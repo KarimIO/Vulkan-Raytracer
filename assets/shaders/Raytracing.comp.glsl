@@ -3,7 +3,7 @@
 layout (local_size_x = 16, local_size_y = 16) in;
 layout (binding = 0, rgba8) uniform writeonly image2D resultImage;
 
-layout(binding = 1) uniform UniformBufferObject {
+layout(binding = 1) uniform RenderUniformBufferObject {
 	mat4 cameraToWorld;
 	mat4 cameraInverseProj;
 	float time;
@@ -20,8 +20,6 @@ layout(binding = 1) uniform UniformBufferObject {
 	float blurStrength;
 } ubo;
 
-const int NUM_SPHERES = 16;
-
 struct Material {
 	vec3 albedo;
 	vec3 specular;
@@ -37,8 +35,17 @@ struct Material {
 struct Sphere {
 	vec3 center;
 	float radius;
-	Material material;
+	uint materialIndex;
 };
+
+layout(binding = 2) uniform MaterialUniformBufferObject {
+	Material materials[32];
+} materialsUbo;
+
+layout(binding = 3) uniform SphereUniformBufferObject {
+	uint numSpheres;
+	Sphere spheres[64];
+} spheresUbo;
 
 struct Ray {
 	vec3 origin;
@@ -137,19 +144,19 @@ vec3 GetSkyColor(vec3 dir) {
 	return finalSkyColor; //SRGBToLinear(finalSkyColor);
 }
 
-HitInfo CalculateRayHit(Sphere[NUM_SPHERES] spheres, Ray ray) {
+HitInfo CalculateRayHit(Ray ray) {
 	HitInfo closestHit;
 	closestHit.isHit = false;
 	const float positiveInfinity = uintBitsToFloat(0x7F800000);
 	closestHit.hitDistance = 100000000.0f;
 
-	for (int i = 0; i < NUM_SPHERES; ++i) {
-		Sphere sphere = spheres[i];
+	for (int i = 0; i < spheresUbo.numSpheres; ++i) {
+		Sphere sphere = spheresUbo.spheres[i];
 
 		HitInfo hitInfo = IntersectSphere(sphere, ray);
 		if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
 			closestHit = hitInfo;
-			closestHit.material = sphere.material;
+			closestHit.material = materialsUbo.materials[sphere.materialIndex];
 		}
 	}
 
@@ -231,14 +238,14 @@ float FresnelReflectAmount(float ior1, float ior2, vec3 normal, vec3 incident, f
 	return mix(f0, f90, ret);
 }
 
-vec3 Raytrace(Sphere[NUM_SPHERES] spheres, Ray originalRay, inout uint seed) {
+vec3 Raytrace(Ray originalRay, inout uint seed) {
 	vec3 incomingLight = vec3(0);
 	vec3 rayColor = vec3(1);
 	
 	Ray ray = originalRay;
 
 	for (int i = 0; i <= ubo.maxRayBounceCount; ++i) {
-		HitInfo hitInfo = CalculateRayHit(spheres, ray);
+		HitInfo hitInfo = CalculateRayHit(ray);
 		if (hitInfo.isHit) {
 			Material material = hitInfo.material;
 
@@ -344,7 +351,7 @@ Ray CreateCameraRay(
 	return ray;
 }
 
-vec3 MultiRaytrace(Sphere[NUM_SPHERES] spheres, vec2 uv, ivec2 dim, inout uint seed) {
+vec3 MultiRaytrace(vec2 uv, ivec2 dim, inout uint seed) {
 	vec3 totalLight = vec3(0.0f);
 
 	uv = uv * 2 - 1;
@@ -358,7 +365,7 @@ vec3 MultiRaytrace(Sphere[NUM_SPHERES] spheres, vec2 uv, ivec2 dim, inout uint s
 
 	for (int i = 0; i < ubo.numRaysPerPixel; ++i) {
 		Ray ray = CreateCameraRay(camOrigin, camDirection, camRight, camUp, uv, dim, seed);
-		totalLight += Raytrace(spheres, ray, seed);
+		totalLight += Raytrace(ray, seed);
 	}
 
 	return totalLight / ubo.numRaysPerPixel;
@@ -375,205 +382,11 @@ vec3 ACESFilmicTonemapping(vec3 color) {
 }
 
 void main() {
-	Sphere spheres[NUM_SPHERES];
-	
-	spheres[0].center = vec3(0, 11, 0);
-	spheres[0].radius = 10;
-	spheres[0].material.albedo = vec3(0);
-	spheres[0].material.specular = vec3(0.04);
-	spheres[0].material.specularChance = 0.3;
-	spheres[0].material.ior = 2.950;
-	spheres[0].material.emission = vec3(4);
-	spheres[0].material.surfaceRoughness = 0.9;
-	spheres[0].material.refractionRoughness = 0;
-	spheres[0].material.transmissionColor = vec3(1);
-	spheres[0].material.refractionChance = 0;
-
-	spheres[1].center = vec3(-2, 0.2, 0);
-	spheres[1].radius = 0.4;
-	spheres[1].material.albedo = vec3(1.0, 0.0, 0.0);
-	spheres[1].material.specular = vec3(0.04);
-	spheres[1].material.specularChance = 0.04;
-	spheres[1].material.ior = 1.5;
-	spheres[1].material.emission = vec3(0);
-	spheres[1].material.surfaceRoughness = 0.001;
-	spheres[1].material.refractionRoughness = 0;
-	spheres[1].material.transmissionColor = vec3(1);
-	spheres[1].material.refractionChance = 0;
-	
-	spheres[2].center = vec3(-1, 0.2, 0);
-	spheres[2].radius = 0.4;
-	spheres[2].material.albedo = vec3(1.0, 0.0, 0.0);
-	spheres[2].material.specular = vec3(0.04);
-	spheres[2].material.specularChance = 0.04;
-	spheres[2].material.ior = 1.5;
-	spheres[2].material.emission = vec3(0);
-	spheres[2].material.surfaceRoughness = 0.25;
-	spheres[2].material.refractionRoughness = 0;
-	spheres[2].material.transmissionColor = vec3(1);
-	spheres[2].material.refractionChance = 0;
-	
-	spheres[3].center = vec3(0, 0.2, 0);
-	spheres[3].radius = 0.4;
-	spheres[3].material.albedo = vec3(1.0, 0.0, 0.0);
-	spheres[3].material.specular = vec3(0.04);
-	spheres[3].material.specularChance = 0.04;
-	spheres[3].material.ior = 1.5;
-	spheres[3].material.emission = vec3(0);
-	spheres[3].material.surfaceRoughness = 0.5;
-	spheres[3].material.refractionRoughness = 0;
-	spheres[3].material.transmissionColor = vec3(1);
-	spheres[3].material.refractionChance = 0;
-	
-	spheres[4].center = vec3(1, 0.2, 0);
-	spheres[4].radius = 0.4;
-	spheres[4].material.albedo = vec3(1.0, 0.0, 0.0);
-	spheres[4].material.specular = vec3(0.04);
-	spheres[4].material.specularChance = 0.04;
-	spheres[4].material.ior = 1.5;
-	spheres[4].material.emission = vec3(0);
-	spheres[4].material.surfaceRoughness = 0.75;
-	spheres[4].material.refractionRoughness = 0;
-	spheres[4].material.transmissionColor = vec3(1);
-	spheres[4].material.refractionChance = 0;
-	
-	spheres[5].center = vec3(2, 0.2, 0);
-	spheres[5].radius = 0.4;
-	spheres[5].material.albedo = vec3(1.0, 0.0, 0.0);
-	spheres[5].material.specular = vec3(0.04);
-	spheres[5].material.specularChance = 0.04;
-	spheres[5].material.ior = 1.5;
-	spheres[5].material.emission = vec3(0);
-	spheres[5].material.surfaceRoughness = 1;
-	spheres[5].material.refractionRoughness = 0;
-	spheres[5].material.transmissionColor = vec3(1);
-	spheres[5].material.refractionChance = 0;
-
-	spheres[6].center = vec3(-2, -1, 0);
-	spheres[6].radius = 0.4;
-	spheres[6].material.albedo = vec3(0.944, 0.776, 0.373);
-	spheres[6].material.specular = vec3(0.944, 0.776, 0.373);
-	spheres[6].material.specularChance = 0.9;
-	spheres[6].material.ior = 2.950;
-	spheres[6].material.emission = vec3(0);
-	spheres[6].material.surfaceRoughness = 0.001;
-	spheres[6].material.refractionRoughness = 0;
-	spheres[6].material.transmissionColor = vec3(1);
-	spheres[6].material.refractionChance = 0;
-	
-	spheres[7].center = vec3(-1, -1, 0);
-	spheres[7].radius = 0.4;
-	spheres[7].material.albedo = vec3(0.944, 0.776, 0.373);
-	spheres[7].material.specular = vec3(0.944, 0.776, 0.373);
-	spheres[7].material.specularChance = 0.9;
-	spheres[7].material.ior = 2.950;
-	spheres[7].material.emission = vec3(0);
-	spheres[7].material.surfaceRoughness = 0.25;
-	spheres[7].material.refractionRoughness = 0;
-	spheres[7].material.transmissionColor = vec3(1);
-	spheres[7].material.refractionChance = 0;
-	
-	spheres[8].center = vec3(0, -1, 0);
-	spheres[8].radius = 0.4;
-	spheres[8].material.albedo = vec3(0.944, 0.776, 0.373);
-	spheres[8].material.specular = vec3(0.944, 0.776, 0.373);
-	spheres[8].material.specularChance = 0.9;
-	spheres[8].material.ior = 2.950;
-	spheres[8].material.emission = vec3(0);
-	spheres[8].material.surfaceRoughness = 0.5;
-	spheres[8].material.refractionRoughness = 0;
-	spheres[8].material.transmissionColor = vec3(1);
-	spheres[8].material.refractionChance = 0;
-	
-	spheres[9].center = vec3(1, -1, 0);
-	spheres[9].radius = 0.4;
-	spheres[9].material.albedo = vec3(0.944, 0.776, 0.373);
-	spheres[9].material.specular = vec3(0.944, 0.776, 0.373);
-	spheres[9].material.specularChance = 0.9;
-	spheres[9].material.ior = 2.950;
-	spheres[9].material.emission = vec3(0);
-	spheres[9].material.surfaceRoughness = 0.75;
-	spheres[9].material.refractionRoughness = 0;
-	spheres[9].material.transmissionColor = vec3(1);
-	spheres[9].material.refractionChance = 0;
-	
-	spheres[10].center = vec3(2, -1, 0);
-	spheres[10].radius = 0.4;
-	spheres[10].material.albedo = vec3(0.944, 0.776, 0.373);
-	spheres[10].material.specular = vec3(0.944, 0.776, 0.373);
-	spheres[10].material.specularChance = 0.9;
-	spheres[10].material.ior = 2.950;
-	spheres[10].material.emission = vec3(0);
-	spheres[10].material.surfaceRoughness = 1;
-	spheres[10].material.refractionRoughness = 0;
-	spheres[10].material.transmissionColor = vec3(1);
-	spheres[10].material.refractionChance = 0;
-	
-	spheres[11].center = vec3(-2, -2.2, 0);
-	spheres[11].radius = 0.4;
-	spheres[11].material.albedo = vec3(1);
-	spheres[11].material.specular = vec3(1);
-	spheres[11].material.specularChance = 0.0f;
-	spheres[11].material.ior = 1.52;
-	spheres[11].material.emission = vec3(0);
-	spheres[11].material.surfaceRoughness = 0.0f;
-	spheres[11].material.refractionRoughness = 0.0f;
-	spheres[11].material.transmissionColor = vec3(1);
-	spheres[11].material.refractionChance = 1.0f;
-	
-	spheres[12].center = vec3(-1, -2.2, 0);
-	spheres[12].radius = 0.4;
-	spheres[12].material.albedo = vec3(1);
-	spheres[12].material.specular = vec3(1);
-	spheres[12].material.specularChance = 0.0f;
-	spheres[12].material.ior = 1.52;
-	spheres[12].material.emission = vec3(0);
-	spheres[12].material.surfaceRoughness = 0.0f;
-	spheres[12].material.refractionRoughness = 0.3f;
-	spheres[12].material.transmissionColor = vec3(1);
-	spheres[12].material.refractionChance = 1.0f;
-	
-	spheres[13].center = vec3(0, -2.2, 0);
-	spheres[13].radius = 0.4;
-	spheres[13].material.albedo = vec3(1);
-	spheres[13].material.specular = vec3(1);
-	spheres[13].material.specularChance = 0.0f;
-	spheres[13].material.ior = 1.52;
-	spheres[13].material.emission = vec3(0);
-	spheres[13].material.surfaceRoughness = 0.0f;
-	spheres[13].material.refractionRoughness = 0.5f;
-	spheres[13].material.transmissionColor = vec3(1);
-	spheres[13].material.refractionChance = 1.0f;
-	
-	spheres[14].center = vec3(1, -2.2, 0);
-	spheres[14].radius = 0.4;
-	spheres[14].material.albedo = vec3(1);
-	spheres[14].material.specular = vec3(1);
-	spheres[14].material.specularChance = 0.0f;
-	spheres[14].material.ior = 1.52;
-	spheres[14].material.emission = vec3(0);
-	spheres[14].material.surfaceRoughness = 0.0f;
-	spheres[14].material.refractionRoughness = 0.7f;
-	spheres[14].material.transmissionColor = vec3(1);
-	spheres[14].material.refractionChance = 1.0f;
-	
-	spheres[15].center = vec3(2, -2.2, 0);
-	spheres[15].radius = 0.4;
-	spheres[15].material.albedo = vec3(1);
-	spheres[15].material.specular = vec3(1);
-	spheres[15].material.specularChance = 0.0f;
-	spheres[15].material.ior = 1.52;
-	spheres[15].material.emission = vec3(0);
-	spheres[15].material.surfaceRoughness = 0.0f;
-	spheres[15].material.refractionRoughness = 0.9f;
-	spheres[15].material.transmissionColor = vec3(1);
-	spheres[15].material.refractionChance = 1.0f;
-	
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
 
 	uint randomSeed = gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
-	vec3 pixelColor = MultiRaytrace(spheres, uv, dim, randomSeed);
+	vec3 pixelColor = MultiRaytrace(uv, dim, randomSeed);
 
 	const float exposure = 1.0f;
 	pixelColor *= exposure;

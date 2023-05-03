@@ -37,12 +37,25 @@ public:
 		return *static_cast<T*>(uniformBuffersMapped[i]);
 	}
 
+	void* GetMappedBuffer() {
+		return uniformBuffersMapped[0];
+	}
+
+	template<typename T>
+	T& GetMappedBuffer() {
+		return *static_cast<T*>(uniformBuffersMapped[0]);
+	}
+
 	uint32_t GetSize() {
 		return bufferSize;
 	}
 
 	VkBuffer GetUniformBuffer(size_t i) {
 		return uniformBuffers[i];
+	}
+
+	VkBuffer GetUniformBuffer() {
+		return uniformBuffers[0];
 	}
 
 	~UniformBuffer() {
