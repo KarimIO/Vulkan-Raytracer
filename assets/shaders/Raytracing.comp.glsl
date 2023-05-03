@@ -61,6 +61,11 @@ struct HitInfo {
 	Material material;
 };
 
+struct Vertex {
+	vec3 position;
+	vec3 normal;
+};
+
 vec3 SRGBToLinear(vec3 inColor) {
 	vec3 outColor;
 	outColor.r = inColor.r <= 0.04045 ? (inColor.r / 12.92) : pow((inColor.r + 0.055) / 1.055, 2.4);
@@ -131,6 +136,58 @@ HitInfo IntersectSphere(Sphere sphere, Ray ray) {
 	return hitInfo;
 }
 
+bool HitTriangle(Ray ray, Vertex vertexA, Vertex vertexB, Vertex vertexC, out float hitDistance, out vec3 normal, out bool isInside)
+{
+	const float EPSILON = 0.0000001;
+	vec3 edgeAB = vertexB.position - vertexA.position;
+	vec3 edgeAC = vertexC.position - vertexA.position;
+	vec3 normalVector = cross(edgeAB, edgeAC);
+	vec3 originToA = ray.origin - vertexA.position;
+	vec3 dao = cross(originToA, ray.dir);
+
+	float determinant = -dot(ray.dir, normalVector);
+	float invDeterminant = 1.0f / determinant;
+
+	float u = invDeterminant *  dot(edgeAC, dao);
+	float v = invDeterminant * -dot(edgeAB, dao);
+	float w = 1 - u - v;
+
+	hitDistance = invDeterminant * dot(originToA, normalVector);
+
+	if (determinant >= EPSILON && hitDistance >= EPSILON && u >= 0.0f && v >= 0.0f && w >= 0.0f) {
+		normal = normalize(vertexA.normal * w + vertexB.normal * u + vertexC.normal * v);
+		isInside = dot(normal, normalVector) > 0.0f;
+		normal = isInside ? -normal : normal;
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+HitInfo IntersectTriangle(Vertex vertex0, Vertex vertex1, Vertex vertex2, Ray ray) {
+	HitInfo hitInfo;
+
+	bool isInside;
+	float hitDistanceAlongRay;
+	vec3 normal;
+	bool hasHit = HitTriangle(ray, vertex0, vertex1, vertex2, hitDistanceAlongRay, normal, isInside);
+	if (hasHit) {
+		vec3 position = ray.origin + hitDistanceAlongRay * ray.dir;
+
+		hitInfo.isHit = true;
+		hitInfo.hitDistance = hitDistanceAlongRay;
+		hitInfo.position = position;
+		hitInfo.normal = normal;
+		hitInfo.isInside = isInside;
+		return hitInfo;
+	}
+	
+	hitInfo.isHit = false;
+	hitInfo.hitDistance = -1;
+	return hitInfo;
+}
+
 vec3 GetSkyColor(vec3 dir) {
 	float skyGradientTransition = pow(smoothstep(0.0f, -0.4f, dir.y), 0.35f);
 	vec3 skyGradient = mix(ubo.horizonColor, ubo.skyColor, skyGradientTransition);
@@ -157,6 +214,34 @@ HitInfo CalculateRayHit(Ray ray) {
 		if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
 			closestHit = hitInfo;
 			closestHit.material = materialsUbo.materials[sphere.materialIndex];
+		}
+	}
+
+	{
+		vec3 v0 = vec3(0,0,0);
+		vec3 v1 = vec3(8,0,0);
+		vec3 v2 = vec3(8,0,8);
+		
+		vec3 n0 = vec3(0,1,0);
+		vec3 n1 = vec3(0,1,0);
+		vec3 n2 = vec3(0,1,0);
+
+		Vertex vert0;
+		vert0.position = v0;
+		vert0.normal = n0;
+		
+		Vertex vert1;
+		vert1.position = v1;
+		vert1.normal = n1;
+		
+		Vertex vert2;
+		vert2.position = v2;
+		vert2.normal = n2;
+		
+		HitInfo hitInfo = IntersectTriangle(vert0, vert1, vert2, ray);
+		if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
+			closestHit = hitInfo;
+			closestHit.material = materialsUbo.materials[6];
 		}
 	}
 
