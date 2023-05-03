@@ -384,7 +384,7 @@ void main() {
 	spheres[0].material.specular = vec3(0.04);
 	spheres[0].material.specularChance = 0.3;
 	spheres[0].material.ior = 2.950;
-	spheres[0].material.emission = vec3(0.5, 0.5, 0.5);
+	spheres[0].material.emission = vec3(4);
 	spheres[0].material.surfaceRoughness = 0.9;
 	spheres[0].material.refractionRoughness = 0;
 	spheres[0].material.transmissionColor = vec3(1);
@@ -394,8 +394,8 @@ void main() {
 	spheres[1].radius = 0.4;
 	spheres[1].material.albedo = vec3(1.0, 0.0, 0.0);
 	spheres[1].material.specular = vec3(0.04);
-	spheres[1].material.specularChance = 0.05;
-	spheres[1].material.ior = 2.950;
+	spheres[1].material.specularChance = 0.04;
+	spheres[1].material.ior = 1.5;
 	spheres[1].material.emission = vec3(0);
 	spheres[1].material.surfaceRoughness = 0.001;
 	spheres[1].material.refractionRoughness = 0;
@@ -406,8 +406,8 @@ void main() {
 	spheres[2].radius = 0.4;
 	spheres[2].material.albedo = vec3(1.0, 0.0, 0.0);
 	spheres[2].material.specular = vec3(0.04);
-	spheres[2].material.specularChance = 0.05;
-	spheres[2].material.ior = 2.950;
+	spheres[2].material.specularChance = 0.04;
+	spheres[2].material.ior = 1.5;
 	spheres[2].material.emission = vec3(0);
 	spheres[2].material.surfaceRoughness = 0.25;
 	spheres[2].material.refractionRoughness = 0;
@@ -418,8 +418,8 @@ void main() {
 	spheres[3].radius = 0.4;
 	spheres[3].material.albedo = vec3(1.0, 0.0, 0.0);
 	spheres[3].material.specular = vec3(0.04);
-	spheres[3].material.specularChance = 0.05;
-	spheres[3].material.ior = 2.950;
+	spheres[3].material.specularChance = 0.04;
+	spheres[3].material.ior = 1.5;
 	spheres[3].material.emission = vec3(0);
 	spheres[3].material.surfaceRoughness = 0.5;
 	spheres[3].material.refractionRoughness = 0;
@@ -430,8 +430,8 @@ void main() {
 	spheres[4].radius = 0.4;
 	spheres[4].material.albedo = vec3(1.0, 0.0, 0.0);
 	spheres[4].material.specular = vec3(0.04);
-	spheres[4].material.specularChance = 0.05;
-	spheres[4].material.ior = 2.950;
+	spheres[4].material.specularChance = 0.04;
+	spheres[4].material.ior = 1.5;
 	spheres[4].material.emission = vec3(0);
 	spheres[4].material.surfaceRoughness = 0.75;
 	spheres[4].material.refractionRoughness = 0;
@@ -442,8 +442,8 @@ void main() {
 	spheres[5].radius = 0.4;
 	spheres[5].material.albedo = vec3(1.0, 0.0, 0.0);
 	spheres[5].material.specular = vec3(0.04);
-	spheres[5].material.specularChance = 0.05;
-	spheres[5].material.ior = 2.950;
+	spheres[5].material.specularChance = 0.04;
+	spheres[5].material.ior = 1.5;
 	spheres[5].material.emission = vec3(0);
 	spheres[5].material.surfaceRoughness = 1;
 	spheres[5].material.refractionRoughness = 0;
@@ -452,8 +452,8 @@ void main() {
 
 	spheres[6].center = vec3(-2, -1, 0);
 	spheres[6].radius = 0.4;
-	spheres[6].material.albedo = vec3(0);
-	spheres[6].material.specular = vec3(0.0, 1.0, 0.0);
+	spheres[6].material.albedo = vec3(0.944, 0.776, 0.373);
+	spheres[6].material.specular = vec3(0.944, 0.776, 0.373);
 	spheres[6].material.specularChance = 0.9;
 	spheres[6].material.ior = 2.950;
 	spheres[6].material.emission = vec3(0);
@@ -464,8 +464,8 @@ void main() {
 	
 	spheres[7].center = vec3(-1, -1, 0);
 	spheres[7].radius = 0.4;
-	spheres[7].material.albedo = vec3(0);
-	spheres[7].material.specular = vec3(0.0, 1.0, 0.0);
+	spheres[7].material.albedo = vec3(0.944, 0.776, 0.373);
+	spheres[7].material.specular = vec3(0.944, 0.776, 0.373);
 	spheres[7].material.specularChance = 0.9;
 	spheres[7].material.ior = 2.950;
 	spheres[7].material.emission = vec3(0);
@@ -476,8 +476,8 @@ void main() {
 	
 	spheres[8].center = vec3(0, -1, 0);
 	spheres[8].radius = 0.4;
-	spheres[8].material.albedo = vec3(0);
-	spheres[8].material.specular = vec3(0.0, 1.0, 0.0);
+	spheres[8].material.albedo = vec3(0.944, 0.776, 0.373);
+	spheres[8].material.specular = vec3(0.944, 0.776, 0.373);
 	spheres[8].material.specularChance = 0.9;
 	spheres[8].material.ior = 2.950;
 	spheres[8].material.emission = vec3(0);
@@ -488,8 +488,8 @@ void main() {
 	
 	spheres[9].center = vec3(1, -1, 0);
 	spheres[9].radius = 0.4;
-	spheres[9].material.albedo = vec3(0);
-	spheres[9].material.specular = vec3(0.0, 1.0, 0.0);
+	spheres[9].material.albedo = vec3(0.944, 0.776, 0.373);
+	spheres[9].material.specular = vec3(0.944, 0.776, 0.373);
 	spheres[9].material.specularChance = 0.9;
 	spheres[9].material.ior = 2.950;
 	spheres[9].material.emission = vec3(0);
@@ -500,8 +500,8 @@ void main() {
 	
 	spheres[10].center = vec3(2, -1, 0);
 	spheres[10].radius = 0.4;
-	spheres[10].material.albedo = vec3(0);
-	spheres[10].material.specular = vec3(0.0, 1.0, 0.0);
+	spheres[10].material.albedo = vec3(0.944, 0.776, 0.373);
+	spheres[10].material.specular = vec3(0.944, 0.776, 0.373);
 	spheres[10].material.specularChance = 0.9;
 	spheres[10].material.ior = 2.950;
 	spheres[10].material.emission = vec3(0);
