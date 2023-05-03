@@ -21,7 +21,7 @@ public:
 	}
 
 	void CalculateProjectionMatrix(int width, int height) {
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 3.0f);
 		inverseProjectionMatrix = glm::inverse(projection);
 	}
 

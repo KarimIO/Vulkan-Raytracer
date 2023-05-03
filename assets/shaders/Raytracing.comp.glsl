@@ -16,6 +16,8 @@ layout(binding = 1) uniform UniformBufferObject {
 	vec3 groundColor;
 	float sunFocus;
 	float sunIntensity;
+	float dofStrength;
+	float blurStrength;
 } ubo;
 
 const int NUM_SPHERES = 16;
@@ -327,17 +329,17 @@ Ray CreateCameraRay(
 	ivec2 dim,
 	inout uint seed
 ) {	
-	vec2 noise = GetSeededRandomInCircle(seed);
+	vec2 originNoise = GetSeededRandomInCircle(seed) * ubo.dofStrength / dim.x;
+	vec2 targetNoise = GetSeededRandomInCircle(seed) * ubo.blurStrength / dim.x;
 
-	vec3 defocusOffset = camRight * noise.x + camUp * noise.y;
-	defocusOffset *= 2.0f / dim.x;
-
-	vec3 origin = camOrigin + defocusOffset;
-	vec3 direction = camDirection; //normalize(camTarget - origin);
+	vec3 originNoiseOffset = camRight * originNoise.x + camUp * originNoise.y;
+	vec3 targetNoiseOffset = camRight * targetNoise.x + camUp * targetNoise.y;
 
 	Ray ray;
-	ray.origin = origin;
-	ray.dir = direction;
+	ray.origin = camOrigin + originNoiseOffset;
+
+	vec3 camTarget = ray.origin + camDirection + targetNoiseOffset;
+	ray.dir = normalize(camTarget - ray.origin);
 
 	return ray;
 }
@@ -349,8 +351,7 @@ vec3 MultiRaytrace(Sphere[NUM_SPHERES] spheres, vec2 uv, ivec2 dim, inout uint s
 
 	vec3 camOrigin = (ubo.cameraToWorld * vec4(0,0,0,1)).xyz;
 	vec3 camDirection = (ubo.cameraInverseProj * vec4(uv,0,1)).xyz;
-	camDirection = (ubo.cameraToWorld * vec4(camDirection,0)).xyz;
-	camDirection = normalize(camDirection);
+	camDirection = (ubo.cameraToWorld * vec4(camDirection, 0)).xyz;
 
 	vec3 camRight = vec3(ubo.cameraToWorld[0][0], ubo.cameraToWorld[1][0], ubo.cameraToWorld[2][0]);
 	vec3 camUp = vec3(ubo.cameraToWorld[0][1], ubo.cameraToWorld[1][1], ubo.cameraToWorld[2][1]);

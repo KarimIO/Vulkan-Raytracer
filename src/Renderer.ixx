@@ -62,6 +62,8 @@ struct UniformBufferObject {
 	alignas(16) glm::vec3 groundColor = glm::vec3(0.2, 0.2, 0.2);
 	float sunFocus = 200.0f;
 	float sunIntensity = 10.0f;
+	float dofStrength;
+	float blurStrength;
 };
 
 export class Renderer {
@@ -125,8 +127,8 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 4;
-		ubo.numRaysPerPixel = 200;
+		ubo.maxRayBounceCount = 2;
+		ubo.numRaysPerPixel = 50;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
@@ -135,6 +137,8 @@ public:
 		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
 		ubo.sunFocus = 200.0f;
 		ubo.sunIntensity = 30.0f;
+		ubo.dofStrength = 1.0f;
+		ubo.blurStrength = 1.0f;
 	}
 
 	void Render() {
