@@ -125,8 +125,8 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 1;
-		ubo.numRaysPerPixel = 1;
+		ubo.maxRayBounceCount = 2;
+		ubo.numRaysPerPixel = 100;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
