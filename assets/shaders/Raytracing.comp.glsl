@@ -301,15 +301,13 @@ vec3 Raytrace(Sphere[NUM_SPHERES] spheres, Ray originalRay, inout uint seed) {
 			rayColor /= rayProbability;
 
 			// Russian Roulette to terminate early
-			{
-				float p = max(rayColor.r, max(rayColor.g, rayColor.b));
-				if (GetSeededRandom(seed) > p) {
-					break;
-				}
- 
-				// Add the energy we 'lose' by randomly terminating paths
-				rayColor *= 1.0f / p;            
+			float probabilityToEnd = max(rayColor.r, max(rayColor.g, rayColor.b));
+			if (GetSeededRandom(seed) > probabilityToEnd) {
+				break;
 			}
+ 
+			// Add the energy we 'lose' by randomly terminating paths
+			rayColor *= 1.0f / probabilityToEnd;
 		}
 		else {
 			incomingLight += GetSkyColor(ray.dir) * rayColor;
