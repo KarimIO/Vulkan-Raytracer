@@ -64,6 +64,7 @@ struct RenderUniformBufferObject {
 	float sunIntensity = 10.0f;
 	float dofStrength;
 	float blurStrength;
+	uint32_t framesSinceLastMove = 0;
 };
 
 struct Material {
@@ -354,10 +355,8 @@ public:
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 		ubo.maxRayBounceCount = 3;
-		ubo.numRaysPerPixel = 10;
-		double sunSin = glm::sin(time);
-		double sunCos = glm::cos(time);
-		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
+		ubo.numRaysPerPixel = framesSinceLastMove < 2 ? 5 : 50;
+		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, 0.4, 0.4));
 		ubo.skyColor = glm::vec3(0.11, 0.36, 0.57);
 		ubo.horizonColor = glm::vec3(0.83, 0.82, 0.67);
 		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
@@ -365,6 +364,7 @@ public:
 		ubo.sunIntensity = 30.0f;
 		ubo.dofStrength = 1.0f;
 		ubo.blurStrength = 1.0f;
+		ubo.framesSinceLastMove = framesSinceLastMove++;
 	}
 
 	void Render() {
@@ -471,6 +471,10 @@ public:
 		}
 	}
 
+	void ResetFrameCounter() {
+		framesSinceLastMove = 0;
+	}
+
 private:
 	int screenWidth;
 	int screenHeight;
@@ -492,4 +496,6 @@ private:
 	ComputePipeline computePipeline;
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
+
+	uint32_t framesSinceLastMove = 0;
 };

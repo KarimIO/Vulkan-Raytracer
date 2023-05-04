@@ -30,10 +30,12 @@ public:
 		VulkanCore::GetVulkanCoreInstance().SetCursorVisible(!isInputEnabled);
 	}
 
-	void HandleInput(float deltaTime) {
+	bool HandleInput(float deltaTime) {
 		if (!isInputEnabled) {
-			return;
+			return false;
 		}
+
+		bool hasMoved = false;
 
 		VulkanCore& vulkanCore = VulkanCore::GetVulkanCoreInstance();
 		float speed = 3.0f;
@@ -44,17 +46,25 @@ public:
 
 		int width, height;
 		vulkanCore.GetSize(width, height);
-		vulkanCore.SetMousePos(width / 2, height / 2);
 
-		horizontalAngle += mouseSpeed * deltaTime * float(width / 2 - xpos);
-		verticalAngle += mouseSpeed * deltaTime * float(height / 2 - ypos);
+		int xOffset = width / 2 - xpos;
+		int yOffset = height / 2 - ypos;
 
-		const float maxAngle = 1.55f;
-		if (verticalAngle < -maxAngle) {
-			verticalAngle = -maxAngle;
-		}
-		else if (verticalAngle > maxAngle) {
-			verticalAngle = maxAngle;
+		if (xOffset != 0 || yOffset != 0) {
+			vulkanCore.SetMousePos(width / 2, height / 2);
+
+			horizontalAngle += mouseSpeed * deltaTime * static_cast<float>(xOffset);
+			verticalAngle += mouseSpeed * deltaTime * static_cast<float>(yOffset);
+
+			const float maxAngle = 1.55f;
+			if (verticalAngle < -maxAngle) {
+				verticalAngle = -maxAngle;
+			}
+			else if (verticalAngle > maxAngle) {
+				verticalAngle = maxAngle;
+			}
+
+			hasMoved = true;
 		}
 
 		glm::quat rotation = glm::quat(glm::vec3(verticalAngle, horizontalAngle, 0.0f));
@@ -64,18 +74,22 @@ public:
 
 		if (vulkanCore.GetKey(GLFW_KEY_UP) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_W) == GLFW_PRESS) {
 			position += cameraForward * deltaTime * speed;
+			hasMoved = true;
 		}
 
 		if (vulkanCore.GetKey(GLFW_KEY_DOWN) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_S) == GLFW_PRESS) {
 			position -= cameraForward * deltaTime * speed;
+			hasMoved = true;
 		}
 
 		if (vulkanCore.GetKey(GLFW_KEY_RIGHT) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_D) == GLFW_PRESS) {
 			position += right * deltaTime * speed;
+			hasMoved = true;
 		}
 
 		if (vulkanCore.GetKey(GLFW_KEY_LEFT) == GLFW_PRESS || vulkanCore.GetKey(GLFW_KEY_A) == GLFW_PRESS) {
 			position -= right * deltaTime * speed;
+			hasMoved = true;
 		}
 
 		inverseViewMatrix = glm::inverse(glm::lookAt(
@@ -84,6 +98,7 @@ public:
 			glm::vec3(0, 1, 0)
 		));
 
+		return hasMoved;
 	}
 
 	void ResetCursor() {

@@ -1,9 +1,10 @@
 #version 450
 
 layout (local_size_x = 16, local_size_y = 16) in;
-layout (binding = 0, rgba8) uniform writeonly image2D resultImage;
+layout (binding = 0, rgba8) uniform readonly image2D previousImage;
+layout (binding = 1, rgba8) uniform writeonly image2D resultImage;
 
-layout(binding = 1) uniform RenderUniformBufferObject {
+layout(binding = 2) uniform RenderUniformBufferObject {
 	mat4 cameraToWorld;
 	mat4 cameraInverseProj;
 	float time;
@@ -18,6 +19,7 @@ layout(binding = 1) uniform RenderUniformBufferObject {
 	float sunIntensity;
 	float dofStrength;
 	float blurStrength;
+	uint framesSinceLastMove;
 } ubo;
 
 struct Material {
@@ -38,11 +40,11 @@ struct Sphere {
 	uint materialIndex;
 };
 
-layout(std140, binding = 2) readonly buffer MaterialUniformBufferObject {
+layout(std140, binding = 3) readonly buffer MaterialUniformBufferObject {
 	Material materials[];
 } materialsUbo;
 
-layout(std140, binding = 3) readonly buffer SphereUniformBufferObject {
+layout(std140, binding = 4) readonly buffer SphereUniformBufferObject {
 	uint numSpheres;
 	Sphere spheres[];
 } spheresUbo;
@@ -52,11 +54,11 @@ struct Vertex {
 	vec3 normal;
 };
 
-layout(std140, binding = 4) readonly buffer VertexUniformBufferObject {
+layout(std140, binding = 5) readonly buffer VertexUniformBufferObject {
 	Vertex vertices[];
 } verticesUbo;
 
-layout(std140, binding = 5) readonly buffer IndexUniformBufferObject {
+layout(std140, binding = 6) readonly buffer IndexUniformBufferObject {
 	uint indices[];
 } indicesUbo;
 
@@ -68,7 +70,7 @@ struct MeshInfo {
 	vec3 boundsMax;
 };
 
-layout(std140, binding = 6) readonly buffer MeshInfoUniformBufferObject {
+layout(std140, binding = 7) readonly buffer MeshInfoUniformBufferObject {
 	uint numMeshes;
 	MeshInfo meshes[];
 } meshesUbo;
@@ -506,7 +508,7 @@ void main() {
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
 
-	uint randomSeed = gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
+	uint randomSeed = ((ubo.framesSinceLastMove + 1000) * 200) + gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
 	vec3 pixelColor = MultiRaytrace(uv, dim, randomSeed);
 
 	const float exposure = 1.0f;
@@ -517,6 +519,11 @@ void main() {
  
 	// convert from linear to sRGB for display
 	pixelColor = LinearToSRGB(pixelColor);
+	
+	vec3 previousPixel = imageLoad(previousImage, ivec2(gl_GlobalInvocationID.xy)).rgb;
 
-	imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixelColor, 1));
+	float currentFrameWeight = 1.0f / (ubo.framesSinceLastMove + 1);
+	float previousFrameWeight = 1.0f - currentFrameWeight;
+	vec3 mixedPixel = previousPixel * previousFrameWeight + pixelColor * currentFrameWeight;
+	imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(mixedPixel, 1));
 }

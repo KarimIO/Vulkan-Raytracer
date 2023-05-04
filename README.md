@@ -8,7 +8,6 @@ You can control the camera using WASD / Arrow keys.
 
 ## Roadmap
 
- * Progressive render accumulation to reduce noise
  * Load models from glTF files
  * Depth of Field
  * Textures

@@ -50,8 +50,8 @@ public:
 			HandleTime();
 			HandleInput();
 			SetUniformData();
-			vulkanCore.PollEvents();
 			renderer.Render();
+			vulkanCore.PollEvents();
 		}
 
 		vulkanCore.WaitUntilEndOfFrame();
@@ -66,9 +66,13 @@ public:
 		if (isTabPressed && !wasTabPressed) {
 			camera.ToggleInputEnabled();
 		}
+
 		wasTabPressed = isTabPressed;
 
-		camera.HandleInput(deltaTime);
+		bool hasMoved = camera.HandleInput(deltaTime);
+		if (hasMoved) {
+			renderer.ResetFrameCounter();
+		}
 	}
 
 	void SetUniformData() {
