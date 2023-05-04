@@ -64,7 +64,8 @@ struct MeshInfo {
 	uint baseIndex;
 	uint indexCount;
 	uint materialIndex;
-	uint unusedPad;
+	vec3 boundsMin;
+	vec3 boundsMax;
 };
 
 layout(std140, binding = 6) readonly buffer MeshInfoUniformBufferObject {
@@ -207,6 +208,28 @@ HitInfo IntersectTriangle(Vertex vertex0, Vertex vertex1, Vertex vertex2, Ray ra
 	return hitInfo;
 }
 
+bool IntersectAABB(vec3 boundsMin, vec3 boundsMax, Ray ray) {
+	float tx1 = (boundsMin.x - ray.origin.x) / ray.dir.x;
+	float tx2 = (boundsMax.x - ray.origin.x) / ray.dir.x;
+
+	float tmin = min(tx1, tx2);
+	float tmax = max(tx1, tx2);
+
+	float ty1 = (boundsMin.y - ray.origin.y) / ray.dir.y;
+	float ty2 = (boundsMax.y - ray.origin.y) / ray.dir.y;
+
+	tmin = max(tmin, min(ty1, ty2));
+	tmax = min(tmax, max(ty1, ty2));
+
+	float tz1 = (boundsMin.z - ray.origin.z) / ray.dir.z;
+	float tz2 = (boundsMax.z - ray.origin.z) / ray.dir.z;
+
+	tmin = max(tmin, min(tz1, tz2));
+	tmax = min(tmax, max(tz1, tz2));
+
+	return tmax >= tmin;
+}
+
 vec3 GetSkyColor(vec3 dir) {
 	float skyGradientTransition = pow(smoothstep(0.0f, -0.4f, dir.y), 0.35f);
 	vec3 skyGradient = mix(ubo.horizonColor, ubo.skyColor, skyGradientTransition);
@@ -238,20 +261,22 @@ HitInfo CalculateRayHit(Ray ray) {
 	
 	for (uint i = 0; i < meshesUbo.numMeshes; ++i) {
 		MeshInfo mesh = meshesUbo.meshes[i];
-		
-		for (uint j = mesh.baseIndex; j < mesh.indexCount; j += 3) {
-			uint indexA = indicesUbo.indices[j];
-			uint indexB = indicesUbo.indices[j+1];
-			uint indexC = indicesUbo.indices[j+2];
-	
-			Vertex vertexA = verticesUbo.vertices[indexA];
-			Vertex vertexB = verticesUbo.vertices[indexB];
-			Vertex vertexC = verticesUbo.vertices[indexC];
 
-			HitInfo hitInfo = IntersectTriangle(vertexA, vertexB, vertexC, ray);
-			if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
-				closestHit = hitInfo;
-				closestHit.material = materialsUbo.materials[mesh.materialIndex];
+		if (IntersectAABB(mesh.boundsMin, mesh.boundsMax, ray)) {
+			for (uint j = mesh.baseIndex; j < mesh.indexCount; j += 3) {
+				uint indexA = indicesUbo.indices[j];
+				uint indexB = indicesUbo.indices[j+1];
+				uint indexC = indicesUbo.indices[j+2];
+	
+				Vertex vertexA = verticesUbo.vertices[indexA];
+				Vertex vertexB = verticesUbo.vertices[indexB];
+				Vertex vertexC = verticesUbo.vertices[indexC];
+
+				HitInfo hitInfo = IntersectTriangle(vertexA, vertexB, vertexC, ray);
+				if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
+					closestHit = hitInfo;
+					closestHit.material = materialsUbo.materials[mesh.materialIndex];
+				}
 			}
 		}
 	}

@@ -134,7 +134,7 @@ struct SphereUniformBufferObject {
 	Sphere spheres[64];
 };
 
-struct alignas(32) Vertex {
+struct Vertex {
 	alignas(16) glm::vec3 position;
 	alignas(16) glm::vec3 normal;
 };
@@ -147,14 +147,16 @@ struct IndexUniformBufferObject {
 	struct alignas(16) FourByteAlignedUint {
 		uint32_t value;
 	};
+
 	FourByteAlignedUint indices[128];
 };
 
-struct alignas(16) MeshInfo {
+struct MeshInfo {
 	uint32_t baseIndex;
 	uint32_t indexCount;
 	uint32_t materialIndex;
-	uint32_t unusedPad;
+	alignas(16) glm::vec3 boundsMin;
+	alignas(16) glm::vec3 boundsMax;
 };
 
 struct MeshInfoUniformBufferObject {
@@ -306,6 +308,8 @@ public:
 		meshUbo.meshes[0].baseIndex = 0;
 		meshUbo.meshes[0].indexCount = static_cast<uint32_t>(indices.size());
 		meshUbo.meshes[0].materialIndex = 6;
+		meshUbo.meshes[0].boundsMin = glm::vec3(4.0f, -1.0f, -1.0f);
+		meshUbo.meshes[0].boundsMax = glm::vec3(6.0f,  1.0f,  1.0f);
 	}
 
 	void SetupSpheres() {
