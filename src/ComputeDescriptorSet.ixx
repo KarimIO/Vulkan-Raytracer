@@ -30,35 +30,35 @@ public:
 		VkDescriptorSetLayoutBinding sphereUboLayoutBinding{};
 		sphereUboLayoutBinding.binding = 2;
 		sphereUboLayoutBinding.descriptorCount = 1;
-		sphereUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		sphereUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		sphereUboLayoutBinding.pImmutableSamplers = nullptr;
 		sphereUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
 		VkDescriptorSetLayoutBinding materialUboLayoutBinding{};
 		materialUboLayoutBinding.binding = 3;
 		materialUboLayoutBinding.descriptorCount = 1;
-		materialUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		materialUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		materialUboLayoutBinding.pImmutableSamplers = nullptr;
 		materialUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
 		VkDescriptorSetLayoutBinding vertexUboLayoutBinding{};
 		vertexUboLayoutBinding.binding = 4;
 		vertexUboLayoutBinding.descriptorCount = 1;
-		vertexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		vertexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		vertexUboLayoutBinding.pImmutableSamplers = nullptr;
 		vertexUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
 		VkDescriptorSetLayoutBinding indexUboLayoutBinding{};
 		indexUboLayoutBinding.binding = 5;
 		indexUboLayoutBinding.descriptorCount = 1;
-		indexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		indexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		indexUboLayoutBinding.pImmutableSamplers = nullptr;
 		indexUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
 		VkDescriptorSetLayoutBinding meshInfoUboLayoutBinding{};
 		meshInfoUboLayoutBinding.binding = 6;
 		meshInfoUboLayoutBinding.descriptorCount = 1;
-		meshInfoUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		meshInfoUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		meshInfoUboLayoutBinding.pImmutableSamplers = nullptr;
 		meshInfoUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
@@ -141,7 +141,7 @@ public:
 			descriptorWrites[2].dstSet = descriptorSets[i];
 			descriptorWrites[2].dstBinding = 2;
 			descriptorWrites[2].dstArrayElement = 0;
-			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[2].descriptorCount = 1;
 			descriptorWrites[2].pBufferInfo = &materialBufferInfo;
 
@@ -149,7 +149,7 @@ public:
 			descriptorWrites[3].dstSet = descriptorSets[i];
 			descriptorWrites[3].dstBinding = 3;
 			descriptorWrites[3].dstArrayElement = 0;
-			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[3].descriptorCount = 1;
 			descriptorWrites[3].pBufferInfo = &sphereBufferInfo;
 
@@ -157,7 +157,7 @@ public:
 			descriptorWrites[4].dstSet = descriptorSets[i];
 			descriptorWrites[4].dstBinding = 4;
 			descriptorWrites[4].dstArrayElement = 0;
-			descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[4].descriptorCount = 1;
 			descriptorWrites[4].pBufferInfo = &vertexBufferInfo;
 
@@ -165,7 +165,7 @@ public:
 			descriptorWrites[5].dstSet = descriptorSets[i];
 			descriptorWrites[5].dstBinding = 5;
 			descriptorWrites[5].dstArrayElement = 0;
-			descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[5].descriptorCount = 1;
 			descriptorWrites[5].pBufferInfo = &indexBufferInfo;
 
@@ -173,7 +173,7 @@ public:
 			descriptorWrites[6].dstSet = descriptorSets[i];
 			descriptorWrites[6].dstBinding = 6;
 			descriptorWrites[6].dstArrayElement = 0;
-			descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 			descriptorWrites[6].descriptorCount = 1;
 			descriptorWrites[6].pBufferInfo = &meshInfoBufferInfo;
 

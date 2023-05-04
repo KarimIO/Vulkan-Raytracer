@@ -106,10 +106,14 @@ struct Material {
 
 	static Material Transmissive(glm::vec3 transmissionColor, float refractionRoughness, float ior) {
 		Material material;
+		material.albedo = glm::vec3(1.0f, 1.0f, 1.0f);
+		material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
 		material.transmissionColor = transmissionColor;
+		material.surfaceRoughness = 0.0f;
 		material.refractionRoughness = refractionRoughness;
 		material.ior = ior;
 		material.refractionChance = 1.0f;
+		material.specularChance = 0.0f;
 
 		return material;
 	}
@@ -174,12 +178,12 @@ public:
 		vertexBuffer.Initialize(static_cast<const void*>(vertices.data()), vertices.size() * sizeof(vertices[0]), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		indexBuffer.Initialize(static_cast<const void*>(indices.data()), indices.size() * sizeof(indices[0]), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-		renderUniformBuffer.Initialize(2, sizeof(RenderUniformBufferObject));
-		materialUniformBuffer.Initialize(1, sizeof(MaterialUniformBufferObject));
-		sphereUniformBuffer.Initialize(1, sizeof(SphereUniformBufferObject));
-		vertexUniformBufferObject.Initialize(1, sizeof(VertexUniformBufferObject));
-		indexUniformBufferObject.Initialize(1, sizeof(IndexUniformBufferObject));
-		meshInfoUniformBufferObject.Initialize(1, sizeof(MeshInfoUniformBufferObject));
+		renderUniformBuffer.Initialize(2, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(RenderUniformBufferObject));
+		materialUniformBuffer.Initialize(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(MaterialUniformBufferObject));
+		sphereUniformBuffer.Initialize(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(SphereUniformBufferObject));
+		vertexUniformBufferObject.Initialize(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(VertexUniformBufferObject));
+		indexUniformBufferObject.Initialize(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(IndexUniformBufferObject));
+		meshInfoUniformBufferObject.Initialize(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, sizeof(MeshInfoUniformBufferObject));
 
 		SetupMaterials();
 		SetupSpheres();
@@ -345,8 +349,8 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 2;
-		ubo.numRaysPerPixel = 5;
+		ubo.maxRayBounceCount = 3;
+		ubo.numRaysPerPixel = 10;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));

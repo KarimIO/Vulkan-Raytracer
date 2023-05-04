@@ -10,7 +10,7 @@ export class UniformBuffer {
 	uint32_t bufferSize;
 
 public:
-	void Initialize(size_t uniformBufferCount, uint32_t bufferSize) {
+	void Initialize(size_t uniformBufferCount, VkBufferUsageFlags usage, uint32_t bufferSize) {
 		this->uniformBufferCount = uniformBufferCount;
 		this->bufferSize = bufferSize;
 
@@ -22,7 +22,7 @@ public:
 		uniformBuffersMapped.resize(uniformBufferCount);
 
 		for (size_t i = 0; i < uniformBufferCount; i++) {
-			VulkanCore::CreateBuffer(uboSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+			VulkanCore::CreateBuffer(uboSize, usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 
 			vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 		}

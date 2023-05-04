@@ -38,13 +38,13 @@ struct Sphere {
 	uint materialIndex;
 };
 
-layout(binding = 2) uniform MaterialUniformBufferObject {
-	Material materials[32];
+layout(std140, binding = 2) readonly buffer MaterialUniformBufferObject {
+	Material materials[];
 } materialsUbo;
 
-layout(binding = 3) uniform SphereUniformBufferObject {
+layout(std140, binding = 3) readonly buffer SphereUniformBufferObject {
 	uint numSpheres;
-	Sphere spheres[64];
+	Sphere spheres[];
 } spheresUbo;
 
 struct Vertex {
@@ -52,12 +52,12 @@ struct Vertex {
 	vec3 normal;
 };
 
-layout(binding = 4) uniform VertexUniformBufferObject {
-	Vertex vertices[128];
+layout(std140, binding = 4) readonly buffer VertexUniformBufferObject {
+	Vertex vertices[];
 } verticesUbo;
 
-layout(binding = 5) uniform IndexUniformBufferObject {
-	uint indices[128];
+layout(std140, binding = 5) readonly buffer IndexUniformBufferObject {
+	uint indices[];
 } indicesUbo;
 
 struct MeshInfo {
@@ -67,9 +67,9 @@ struct MeshInfo {
 	uint unusedPad;
 };
 
-layout(binding = 6) uniform MeshInfoUniformBufferObject {
+layout(std140, binding = 6) readonly buffer MeshInfoUniformBufferObject {
 	uint numMeshes;
-	MeshInfo meshes[64];
+	MeshInfo meshes[];
 } meshesUbo;
 
 struct Ray {
@@ -174,10 +174,9 @@ bool HitTriangle(Ray ray, Vertex vertexA, Vertex vertexB, Vertex vertexC, out fl
 
 	hitDistance = invDeterminant * dot(originToA, normalVector);
 
-	if (determinant >= EPSILON && hitDistance >= EPSILON && u >= 0.0f && v >= 0.0f && w >= 0.0f) {
+	if (hitDistance >= EPSILON && u >= 0.0f && v >= 0.0f && w >= 0.0f) {
 		normal = normalize(vertexA.normal * w + vertexB.normal * u + vertexC.normal * v);
 		isInside = dot(normal, normalVector) < 0.0f;
-		normal = isInside ? -normal : normal;
 		return true;
 	}
 	else {
@@ -218,7 +217,7 @@ vec3 GetSkyColor(vec3 dir) {
 	float sunFactor = sun * sunMask;
 
 	vec3 finalSkyColor = mix(skyGradient, ubo.groundColor, groundToSkyTransition) + sunFactor;
-	return finalSkyColor; //SRGBToLinear(finalSkyColor);
+	return SRGBToLinear(finalSkyColor);
 }
 
 HitInfo CalculateRayHit(Ray ray) {
@@ -489,10 +488,10 @@ void main() {
 	pixelColor *= exposure;
  
 	// convert unbounded HDR color range to SDR color range
-	// pixelColor = ACESFilmicTonemapping(pixelColor);
+	pixelColor = ACESFilmicTonemapping(pixelColor);
  
 	// convert from linear to sRGB for display
-	// pixelColor = LinearToSRGB(pixelColor);
+	pixelColor = LinearToSRGB(pixelColor);
 
 	imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(pixelColor, 1));
 }
