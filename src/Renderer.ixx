@@ -15,13 +15,13 @@ import Texture;
 import RaytracerTargetImage;
 import VulkanCore;
 
-struct Vertex {
+struct ScreenSpaceVertex {
 	glm::vec2 pos;
 
 	static VkVertexInputBindingDescription GetBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};
 		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.stride = sizeof(ScreenSpaceVertex);
 		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 		return bindingDescription;
@@ -33,13 +33,13 @@ struct Vertex {
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Vertex, pos);
+		attributeDescriptions[0].offset = offsetof(ScreenSpaceVertex, pos);
 
 		return attributeDescriptions;
 	}
 };
 
-const std::vector<Vertex> vertices = {
+const std::vector<ScreenSpaceVertex> vertices = {
 	{{0.0f, 0.0f}},
 	{{1.0f, 0.0f}},
 	{{1.0f, 1.0f}},
@@ -130,6 +130,34 @@ struct SphereUniformBufferObject {
 	Sphere spheres[64];
 };
 
+struct alignas(32) Vertex {
+	alignas(16) glm::vec3 position;
+	alignas(16) glm::vec3 normal;
+};
+
+struct VertexUniformBufferObject {
+	Vertex vertices[128];
+};
+
+struct IndexUniformBufferObject {
+	struct alignas(16) FourByteAlignedUint {
+		uint32_t value;
+	};
+	FourByteAlignedUint indices[128];
+};
+
+struct alignas(16) MeshInfo {
+	uint32_t baseIndex;
+	uint32_t indexCount;
+	uint32_t materialIndex;
+	uint32_t unusedPad;
+};
+
+struct MeshInfoUniformBufferObject {
+	uint32_t numMeshes;
+	MeshInfo meshes[64];
+};
+
 export class Renderer {
 public:
 	bool Initialize(VulkanCore* vulkanCore) {
@@ -149,12 +177,16 @@ public:
 		renderUniformBuffer.Initialize(2, sizeof(RenderUniformBufferObject));
 		materialUniformBuffer.Initialize(1, sizeof(MaterialUniformBufferObject));
 		sphereUniformBuffer.Initialize(1, sizeof(SphereUniformBufferObject));
+		vertexUniformBufferObject.Initialize(1, sizeof(VertexUniformBufferObject));
+		indexUniformBufferObject.Initialize(1, sizeof(IndexUniformBufferObject));
+		meshInfoUniformBufferObject.Initialize(1, sizeof(MeshInfoUniformBufferObject));
 
 		SetupMaterials();
 		SetupSpheres();
+		SetupMeshes();
 
-		VkVertexInputBindingDescription vertexBindingDescription = Vertex::GetBindingDescription();
-		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = Vertex::GetAttributeDescriptions();
+		VkVertexInputBindingDescription vertexBindingDescription = ScreenSpaceVertex::GetBindingDescription();
+		std::array<VkVertexInputAttributeDescription, 1> vertexAttributeDescription = ScreenSpaceVertex::GetAttributeDescriptions();
 
 		DescriptorPoolBuilder()
 			.WithStorageImages(MAX_FRAMES_IN_FLIGHT)
@@ -163,7 +195,7 @@ public:
 			.Build(descriptorPool);
 
 		descriptorSet.Initialize(raytracerTargetImage, sampler, descriptorPool);
-		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, renderUniformBuffer, materialUniformBuffer, sphereUniformBuffer, descriptorPool);
+		computeDescriptorSet.Initialize(raytracerTargetImage, sampler, renderUniformBuffer, materialUniformBuffer, sphereUniformBuffer, vertexUniformBufferObject, indexUniformBufferObject, meshInfoUniformBufferObject, descriptorPool);
 		VkDescriptorSetLayout descriptorSetLayout = descriptorSet.GetLayout();
 
 		computePipeline.Initialize("assets/shaders/Raytracing.comp.spv", computeDescriptorSet);
@@ -187,6 +219,89 @@ public:
 		raytracerTargetImage.Resize(width, height);
 		descriptorSet.UpdateTargetImage(raytracerTargetImage, sampler);
 		computeDescriptorSet.UpdateTargetImage(raytracerTargetImage, sampler);
+	}
+
+	void SetupMeshes() {
+		VertexUniformBufferObject& vertexUbo = vertexUniformBufferObject.GetMappedBuffer<VertexUniformBufferObject>();
+		IndexUniformBufferObject& indexUbo = indexUniformBufferObject.GetMappedBuffer<IndexUniformBufferObject>();
+
+		std::vector<Vertex> vertices{
+			//Top
+			Vertex(glm::vec3(4, 1, -1), glm::vec3(0, 1, 0)), //0
+			Vertex(glm::vec3(6, 1, -1), glm::vec3(0, 1, 0)),  //1
+			Vertex(glm::vec3(4, 1, 1), glm::vec3(0, 1, 0)), //2
+			Vertex(glm::vec3(6, 1,  1), glm::vec3(0, 1, 0)), //3
+				
+			//Bottom
+			Vertex(glm::vec3(4, -1, -1), glm::vec3(0, -1, 0)), //4
+			Vertex(glm::vec3(6, -1, -1), glm::vec3(0, -1, 0)), //5
+			Vertex(glm::vec3(4, -1,  1), glm::vec3(0, -1, 0)), //6
+			Vertex(glm::vec3(6, -1,  1), glm::vec3(0, -1, 0)),  //7
+				
+			//Front
+			Vertex(glm::vec3(4, 1, 1), glm::vec3(0, 0, 1)), //8
+			Vertex(glm::vec3(6,  1, 1), glm::vec3(0, 0, 1)), //9
+			Vertex(glm::vec3(4, -1, 1), glm::vec3(0, 0, 1)), //10
+			Vertex(glm::vec3(6, -1, 1), glm::vec3(0, 0, 1)), //11
+				
+			//Back
+			Vertex(glm::vec3(4,  1, -1), glm::vec3(0, 0, -1)), //12
+			Vertex(glm::vec3(6,  1, -1), glm::vec3(0, 0, -1)), //13
+			Vertex(glm::vec3(4, -1, -1), glm::vec3(0, 0, -1)), //14
+			Vertex(glm::vec3(6, -1, -1), glm::vec3(0, 0, -1)), //15
+				
+			//Left
+			Vertex(glm::vec3(4,  1,  1), glm::vec3(-1, 0, 0)), //16
+			Vertex(glm::vec3(4,  1, -1), glm::vec3(-1, 0, 0)), //17
+			Vertex(glm::vec3(4, -1,  1), glm::vec3(-1, 0, 0)), //18
+			Vertex(glm::vec3(4, -1, -1), glm::vec3(-1, 0, 0)), //19
+				
+			//Right
+			Vertex(glm::vec3(6,  1,  1), glm::vec3(1, 0, 0)), //20
+			Vertex(glm::vec3(6,  1, -1), glm::vec3(1, 0, 0)), //21
+			Vertex(glm::vec3(6, -1,  1), glm::vec3(1, 0, 0)), //22
+			Vertex(glm::vec3(6, -1, -1), glm::vec3(1, 0, 0))  //23
+		};
+
+		std::vector<uint32_t> indices{
+			//Top
+			1, 0, 2,
+			2, 3, 1,
+
+			//Bottom
+			4, 5, 6,
+			7, 6, 5,
+
+			//Front
+			9, 8, 10,
+			10, 11, 9,
+
+			//Back
+			12, 13, 14,
+			15, 14, 13,
+
+			//Left
+			16, 17, 18,
+			19, 18, 17,
+
+			//Right
+			21, 20, 22,
+			22, 23, 21
+		};
+
+		for (size_t i = 0; i < vertices.size(); ++i) {
+			vertexUbo.vertices[i] = vertices[i];
+		}
+
+		for (size_t i = 0; i < indices.size(); ++i) {
+			indexUbo.indices[i].value = indices[i];
+		}
+
+		MeshInfoUniformBufferObject& meshUbo = meshInfoUniformBufferObject.GetMappedBuffer<MeshInfoUniformBufferObject>();
+		meshUbo.numMeshes = 1;
+		meshUbo.meshes[0].baseIndex = 0;
+		meshUbo.meshes[0].indexCount = static_cast<uint32_t>(indices.size());
+		meshUbo.meshes[0].materialIndex = 6;
 	}
 
 	void SetupSpheres() {
@@ -231,7 +346,7 @@ public:
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
 		ubo.maxRayBounceCount = 2;
-		ubo.numRaysPerPixel = 50;
+		ubo.numRaysPerPixel = 5;
 		double sunSin = glm::sin(time);
 		double sunCos = glm::cos(time);
 		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, sunSin, sunCos));
@@ -359,6 +474,9 @@ private:
 	UniformBuffer renderUniformBuffer;
 	UniformBuffer materialUniformBuffer;
 	UniformBuffer sphereUniformBuffer;
+	UniformBuffer vertexUniformBufferObject;
+	UniformBuffer indexUniformBufferObject;
+	UniformBuffer meshInfoUniformBufferObject;
 	RaytracerTargetImage raytracerTargetImage;
 	Texture texture;
 	Sampler sampler;

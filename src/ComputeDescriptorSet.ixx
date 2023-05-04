@@ -10,7 +10,7 @@ import VulkanCore;
 
 export class ComputeDescriptorSet {
 public:
-	void Initialize(RaytracerTargetImage& texture, Sampler& sampler, UniformBuffer& renderUniformBuffer, UniformBuffer& materialUniformBuffer, UniformBuffer& sphereUniformBuffer, DescriptorPool& descriptorPool) {
+	void Initialize(RaytracerTargetImage& texture, Sampler& sampler, UniformBuffer& renderUniformBuffer, UniformBuffer& materialUniformBuffer, UniformBuffer& sphereUniformBuffer, UniformBuffer& vertexUniformBufferObject, UniformBuffer& indexUniformBufferObject, UniformBuffer& meshInfoUniformBufferObject, DescriptorPool& descriptorPool) {
 		VkDevice device = VulkanCore::GetDevice();
 
 		VkDescriptorSetLayoutBinding imageLayoutBinding{};
@@ -41,7 +41,28 @@ public:
 		materialUboLayoutBinding.pImmutableSamplers = nullptr;
 		materialUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
-		std::array<VkDescriptorSetLayoutBinding, 4> bindings = { imageLayoutBinding, renderUboLayoutBinding, sphereUboLayoutBinding, materialUboLayoutBinding };
+		VkDescriptorSetLayoutBinding vertexUboLayoutBinding{};
+		vertexUboLayoutBinding.binding = 4;
+		vertexUboLayoutBinding.descriptorCount = 1;
+		vertexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		vertexUboLayoutBinding.pImmutableSamplers = nullptr;
+		vertexUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+		VkDescriptorSetLayoutBinding indexUboLayoutBinding{};
+		indexUboLayoutBinding.binding = 5;
+		indexUboLayoutBinding.descriptorCount = 1;
+		indexUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		indexUboLayoutBinding.pImmutableSamplers = nullptr;
+		indexUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+		VkDescriptorSetLayoutBinding meshInfoUboLayoutBinding{};
+		meshInfoUboLayoutBinding.binding = 6;
+		meshInfoUboLayoutBinding.descriptorCount = 1;
+		meshInfoUboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		meshInfoUboLayoutBinding.pImmutableSamplers = nullptr;
+		meshInfoUboLayoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+		std::array<VkDescriptorSetLayoutBinding, 7> bindings = { imageLayoutBinding, renderUboLayoutBinding, sphereUboLayoutBinding, materialUboLayoutBinding, vertexUboLayoutBinding, indexUboLayoutBinding, meshInfoUboLayoutBinding };
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -73,6 +94,21 @@ public:
 		sphereBufferInfo.offset = 0;
 		sphereBufferInfo.range = sphereUniformBuffer.GetSize();
 
+		VkDescriptorBufferInfo vertexBufferInfo{};
+		vertexBufferInfo.buffer = vertexUniformBufferObject.GetUniformBuffer();
+		vertexBufferInfo.offset = 0;
+		vertexBufferInfo.range = vertexUniformBufferObject.GetSize();
+
+		VkDescriptorBufferInfo indexBufferInfo{};
+		indexBufferInfo.buffer = indexUniformBufferObject.GetUniformBuffer();
+		indexBufferInfo.offset = 0;
+		indexBufferInfo.range = indexUniformBufferObject.GetSize();
+
+		VkDescriptorBufferInfo meshInfoBufferInfo{};
+		meshInfoBufferInfo.buffer = meshInfoUniformBufferObject.GetUniformBuffer();
+		meshInfoBufferInfo.offset = 0;
+		meshInfoBufferInfo.range = meshInfoUniformBufferObject.GetSize();
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 			VkDescriptorImageInfo imageInfo{};
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -84,7 +120,7 @@ public:
 			renderBufferInfo.offset = 0;
 			renderBufferInfo.range = renderUniformBuffer.GetSize();
 
-			std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
+			std::array<VkWriteDescriptorSet, 7> descriptorWrites{};
 			descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrites[0].dstSet = descriptorSets[i];
 			descriptorWrites[0].dstBinding = 0;
@@ -116,6 +152,30 @@ public:
 			descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			descriptorWrites[3].descriptorCount = 1;
 			descriptorWrites[3].pBufferInfo = &sphereBufferInfo;
+
+			descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[4].dstSet = descriptorSets[i];
+			descriptorWrites[4].dstBinding = 4;
+			descriptorWrites[4].dstArrayElement = 0;
+			descriptorWrites[4].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[4].descriptorCount = 1;
+			descriptorWrites[4].pBufferInfo = &vertexBufferInfo;
+
+			descriptorWrites[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[5].dstSet = descriptorSets[i];
+			descriptorWrites[5].dstBinding = 5;
+			descriptorWrites[5].dstArrayElement = 0;
+			descriptorWrites[5].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[5].descriptorCount = 1;
+			descriptorWrites[5].pBufferInfo = &indexBufferInfo;
+
+			descriptorWrites[6].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrites[6].dstSet = descriptorSets[i];
+			descriptorWrites[6].dstBinding = 6;
+			descriptorWrites[6].dstArrayElement = 0;
+			descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			descriptorWrites[6].descriptorCount = 1;
+			descriptorWrites[6].pBufferInfo = &meshInfoBufferInfo;
 
 			vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 		}

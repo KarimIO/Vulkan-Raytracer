@@ -47,6 +47,31 @@ layout(binding = 3) uniform SphereUniformBufferObject {
 	Sphere spheres[64];
 } spheresUbo;
 
+struct Vertex {
+	vec3 position;
+	vec3 normal;
+};
+
+layout(binding = 4) uniform VertexUniformBufferObject {
+	Vertex vertices[128];
+} verticesUbo;
+
+layout(binding = 5) uniform IndexUniformBufferObject {
+	uint indices[128];
+} indicesUbo;
+
+struct MeshInfo {
+	uint baseIndex;
+	uint indexCount;
+	uint materialIndex;
+	uint unusedPad;
+};
+
+layout(binding = 6) uniform MeshInfoUniformBufferObject {
+	uint numMeshes;
+	MeshInfo meshes[64];
+} meshesUbo;
+
 struct Ray {
 	vec3 origin;
 	vec3 dir;
@@ -59,11 +84,6 @@ struct HitInfo {
 	vec3 position;
 	vec3 normal;
 	Material material;
-};
-
-struct Vertex {
-	vec3 position;
-	vec3 normal;
 };
 
 vec3 SRGBToLinear(vec3 inColor) {
@@ -156,7 +176,7 @@ bool HitTriangle(Ray ray, Vertex vertexA, Vertex vertexB, Vertex vertexC, out fl
 
 	if (determinant >= EPSILON && hitDistance >= EPSILON && u >= 0.0f && v >= 0.0f && w >= 0.0f) {
 		normal = normalize(vertexA.normal * w + vertexB.normal * u + vertexC.normal * v);
-		isInside = dot(normal, normalVector) > 0.0f;
+		isInside = dot(normal, normalVector) < 0.0f;
 		normal = isInside ? -normal : normal;
 		return true;
 	}
@@ -216,32 +236,24 @@ HitInfo CalculateRayHit(Ray ray) {
 			closestHit.material = materialsUbo.materials[sphere.materialIndex];
 		}
 	}
+	
+	for (uint i = 0; i < meshesUbo.numMeshes; ++i) {
+		MeshInfo mesh = meshesUbo.meshes[i];
+		
+		for (uint j = mesh.baseIndex; j < mesh.indexCount; j += 3) {
+			uint indexA = indicesUbo.indices[j];
+			uint indexB = indicesUbo.indices[j+1];
+			uint indexC = indicesUbo.indices[j+2];
+	
+			Vertex vertexA = verticesUbo.vertices[indexA];
+			Vertex vertexB = verticesUbo.vertices[indexB];
+			Vertex vertexC = verticesUbo.vertices[indexC];
 
-	{
-		vec3 v0 = vec3(0,0,0);
-		vec3 v1 = vec3(8,0,0);
-		vec3 v2 = vec3(8,0,8);
-		
-		vec3 n0 = vec3(0,1,0);
-		vec3 n1 = vec3(0,1,0);
-		vec3 n2 = vec3(0,1,0);
-
-		Vertex vert0;
-		vert0.position = v0;
-		vert0.normal = n0;
-		
-		Vertex vert1;
-		vert1.position = v1;
-		vert1.normal = n1;
-		
-		Vertex vert2;
-		vert2.position = v2;
-		vert2.normal = n2;
-		
-		HitInfo hitInfo = IntersectTriangle(vert0, vert1, vert2, ray);
-		if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
-			closestHit = hitInfo;
-			closestHit.material = materialsUbo.materials[6];
+			HitInfo hitInfo = IntersectTriangle(vertexA, vertexB, vertexC, ray);
+			if (hitInfo.isHit && closestHit.hitDistance > hitInfo.hitDistance) {
+				closestHit = hitInfo;
+				closestHit.material = materialsUbo.materials[mesh.materialIndex];
+			}
 		}
 	}
 
