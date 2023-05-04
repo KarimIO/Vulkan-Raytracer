@@ -8,10 +8,8 @@ You can control the camera using WASD / Arrow keys.
 
 ## Roadmap
 
- * Resizing the viewport
- * Adding support for triangles
- * Culling objects by AABB
- * Two-Coat Materials
+ * Progressive render accumulation to reduce noise
+ * Load models from glTF files
  * Depth of Field
  * Textures
    * Texture Infrastructure
@@ -19,7 +17,8 @@ You can control the camera using WASD / Arrow keys.
    * Normal Texture
    * Metallic Texture
    * Roughness Texture
- * Other methods of denoise
+ * Importance Sampling
+ * Other methods of reducing noise
 
 ## How to Build
 
