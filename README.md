@@ -2,7 +2,7 @@
 
 A raytracer built with Vulkan and C++20 modules that supports realtime compute-shader-based raytracing with multi-bounce and multi-ray per pixel. We only support spheres for the time being.
 
-You can control the camera using WASD / Arrow keys.
+You can control the camera using `WASD` / `Arrow` keys, and the mouse. `Tab` will toggle input. `Escape` will quit the application.
 
 ![A demo image](Demo.jpg "A demo image")
 
