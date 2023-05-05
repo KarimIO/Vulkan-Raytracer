@@ -221,6 +221,7 @@ public:
 
 	void ResizeFramebufferCallback(int width, int height) {
 		std::cout << "Resized to " << width << ", " << height << '\n';
+		ResetFrameCounter();
 		screenWidth = width;
 		screenHeight = height;
 		raytracerTargetImage.Resize(width, height);
