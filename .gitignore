@@ -4,6 +4,13 @@
 /assets/shaders/*.spv
 /assets/shaders/*.bat
 /x64/
-/libraries/
 *.sln
 *.vcxproj*
+/*.dir/
+/Debug/
+/Release/
+
+# Cmake
+cmake_install.cmake
+CmakeCache.txt
+/CMakeFiles/*
