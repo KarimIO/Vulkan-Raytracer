@@ -1,10 +1,13 @@
 export module VulkanCore;
 
 import std.core;
+import <vulkan/vulkan.h>;
 import <GLFW/glfw3.h>;
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
+
+export const int MAX_FRAMES_IN_FLIGHT = 2;
 
 const float B_IN_KB = 1024;
 const float KB_IN_MB = 1024;
