@@ -3,11 +3,14 @@ export module Renderer;
 import std.core;
 
 import <glm/glm.hpp>;
+import <glm/gtc/matrix_transform.hpp>;
+import <glm/gtc/quaternion.hpp>;
 import <vulkan/vulkan.h>;
 
 import Buffer;
 import ComputePipeline;
 import ComputeDescriptorSet;
+import DebugWindow;
 import DescriptorSet;
 import DescriptorPool;
 import GraphicsPipeline;
@@ -167,10 +170,12 @@ struct MeshInfoUniformBufferObject {
 
 export class Renderer {
 public:
-	bool Initialize(VulkanCore* vulkanCore) {
+	bool Initialize(VulkanCore* vulkanCore, DebugWindow* debugWindow, Settings* settings) {
 		std::cout << "Initializing Renderer...\n";
 
+		this->settings = settings;
 		this->vulkanCore = vulkanCore;
+		this->debugWindow = debugWindow;
 		vulkanCore->PassResizeFramebufferCallback([&](int w, int h) { this->ResizeFramebufferCallback(w, h); });
 
 		VulkanCore::GetVulkanCoreInstance().GetSize(screenWidth, screenHeight);
@@ -355,14 +360,19 @@ public:
 		ubo.cameraToWorld = cameraToWorld;
 		ubo.cameraInverseProj = cameraInverseProj;
 		ubo.time = static_cast<float>(time);
-		ubo.maxRayBounceCount = 3;
-		ubo.numRaysPerPixel = framesSinceLastMove < 2 ? 5 : 50;
-		ubo.sunLightDirection = glm::normalize(glm::vec3(0.2, 0.4, 0.4));
-		ubo.skyColor = glm::vec3(0.11, 0.36, 0.57);
-		ubo.horizonColor = glm::vec3(0.83, 0.82, 0.67);
-		ubo.groundColor = glm::vec3(0.2, 0.2, 0.2);
-		ubo.sunFocus = 200.0f;
-		ubo.sunIntensity = 30.0f;
+		ubo.maxRayBounceCount = settings->numBounces;
+		ubo.numRaysPerPixel = framesSinceLastMove < 2
+			? settings->numRaysWhileMoving
+			: settings->numRaysWhileStill;
+
+		glm::quat rotation(glm::vec3(settings->sunLightPitch, settings->sunLightYaw, 0.0f));
+		glm::vec3 cameraForward = rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		ubo.sunLightDirection = cameraForward;
+		ubo.skyColor = settings->skyColor;
+		ubo.horizonColor = settings->horizonColor;
+		ubo.groundColor = settings->groundColor;
+		ubo.sunFocus = settings->sunFocus;
+		ubo.sunIntensity = settings->sunIntensity;
 		ubo.dofStrength = 1.0f;
 		ubo.blurStrength = 1.0f;
 		ubo.framesSinceLastMove = framesSinceLastMove++;
@@ -465,6 +475,8 @@ public:
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
+		debugWindow->Render(commandBuffer);
+
 		vkCmdEndRenderPass(commandBuffer);
 
 		if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -481,6 +493,8 @@ private:
 	int screenHeight;
 
 	VulkanCore* vulkanCore;
+	Settings* settings;
+	DebugWindow* debugWindow;
 	DescriptorSet descriptorSet;
 	ComputeDescriptorSet computeDescriptorSet;
 	DescriptorPool descriptorPool;

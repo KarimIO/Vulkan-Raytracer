@@ -9,6 +9,7 @@ import <glm/gtc/matrix_transform.hpp>;
 import <glm/gtc/quaternion.hpp>;
 
 import Camera;
+import DebugWindow;
 import Renderer;
 import VulkanCore;
 
@@ -21,7 +22,11 @@ public:
 			return false;
 		}
 
-		if (!renderer.Initialize(&vulkanCore)) {
+		if (!debugWindow.Initialize(&settings, std::bind(&Renderer::ResetFrameCounter, &renderer))) {
+			return false;
+		}
+
+		if (!renderer.Initialize(&vulkanCore, &debugWindow, &settings)) {
 			return false;
 		}
 
@@ -47,11 +52,14 @@ public:
 
 	void Run() {
 		while (!vulkanCore.ShouldClose()) {
+			vulkanCore.PollEvents();
 			HandleTime();
 			HandleInput();
 			SetUniformData();
+
+			debugWindow.Update();
+
 			renderer.Render();
-			vulkanCore.PollEvents();
 		}
 
 		vulkanCore.WaitUntilEndOfFrame();
@@ -86,9 +94,11 @@ public:
 	}
 
 private:
+	DebugWindow debugWindow;
 	VulkanCore vulkanCore;
 	Renderer renderer;
 	Camera camera;
+	Settings settings;
 
 	float deltaTime;
 	double lastTime;

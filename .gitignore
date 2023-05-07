@@ -1,14 +1,20 @@
+# VS and VS Code Builds
 /.vs/
 /.vscode/
 /RaytracerTest/
-/assets/shaders/*.spv
-/assets/shaders/*.bat
 /x64/
 *.sln
 *.vcxproj*
 /*.dir/
 /Debug/
 /Release/
+
+## Spir-v and batch files
+/assets/shaders/*.spv
+/assets/shaders/*.bat
+
+# Imgui
+/imgui.ini
 
 # Cmake
 cmake_install.cmake

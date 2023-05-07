@@ -89,8 +89,20 @@ public:
 		return *vkCoreInstance;
 	}
 
+	static GLFWwindow* GetWindow() {
+		return vkCoreInstance->window;
+	}
+
+	static VkInstance GetInstance() {
+		return vkCoreInstance->instance;
+	}
+
 	static VkDevice GetDevice() {
 		return vkCoreInstance->device;
+	}
+
+	static VkQueue GetGraphicsQueue() {
+		return vkCoreInstance->graphicsQueue;
 	}
 
 	static VkPhysicalDevice GetPhysicalDevice() {
@@ -604,7 +616,7 @@ private:
 			glfwDestroyWindow(window);
 		}
 
- 		glfwTerminate();
+		glfwTerminate();
 	}
 
 	void OnResizeFramebuffer() {
