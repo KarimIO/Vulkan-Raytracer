@@ -4,6 +4,8 @@ import std.core;
 
 import <glm/glm.hpp>;
 import <vulkan/vulkan.h>;
+import <imgui/imgui.h>;
+import <imgui/backends/imgui_impl_vulkan.h>;
 
 import Buffer;
 import ComputePipeline;
@@ -464,6 +466,8 @@ public:
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.GetPipelineLayout(), 0, 1, &descriptorSetRef, 0, nullptr);
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 		vkCmdEndRenderPass(commandBuffer);
 

@@ -3,6 +3,9 @@ export module RaytracerEngine;
 import std.core;
 
 import <GLFW/glfw3.h>;
+import <imgui/imgui.h>;
+import <imgui/backends/imgui_impl_glfw.h>;
+import <imgui/backends/imgui_impl_vulkan.h>;
 
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
@@ -47,11 +50,18 @@ public:
 
 	void Run() {
 		while (!vulkanCore.ShouldClose()) {
+			vulkanCore.PollEvents();
 			HandleTime();
 			HandleInput();
 			SetUniformData();
+
+			ImGui_ImplVulkan_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
+
+			ImGui::ShowDemoWindow();
+			ImGui::Render();
 			renderer.Render();
-			vulkanCore.PollEvents();
 		}
 
 		vulkanCore.WaitUntilEndOfFrame();

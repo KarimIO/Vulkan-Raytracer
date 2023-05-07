@@ -39,6 +39,16 @@ target_sources(
 	VulkanRaytracer PRIVATE
 		src/Main.ixx
 		src/StbImpl.cpp
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui.h"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui.cpp"
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui_demo.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui_draw.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui_tables.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui_widgets.cpp"
+
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/backends/imgui_impl_vulkan.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/backends/imgui_impl_glfw.cpp"
 )
 
 target_compile_definitions(
@@ -48,6 +58,8 @@ target_compile_definitions(
 
 target_include_directories(
 	VulkanRaytracer PRIVATE
+		libraries/
+		libraries/imgui/
 		libraries/glfw/include
 		libraries/glm/
 		libraries/stb/

@@ -1,6 +1,9 @@
 export module VulkanCore;
 
 import std.core;
+import <imgui/imgui.h>;
+import <imgui/backends/imgui_impl_glfw.h>;
+import <imgui/backends/imgui_impl_vulkan.h>;
 import <vulkan/vulkan.h>;
 import <GLFW/glfw3.h>;
 
@@ -77,6 +80,7 @@ public:
 		CreateCommandBuffers();
 		CreateComputeCommandBuffers();
 		CreateSyncObjects();
+		SetupImgui();
 
 		return true;
 	}
@@ -604,7 +608,7 @@ private:
 			glfwDestroyWindow(window);
 		}
 
- 		glfwTerminate();
+		glfwTerminate();
 	}
 
 	void OnResizeFramebuffer() {
@@ -1173,6 +1177,61 @@ private:
 		std::cout << "Validation Layer: " << pCallbackData->pMessage << "\n";
 
 		return VK_FALSE;
+	}
+
+	void SetupImgui() {
+		VkDescriptorPoolSize poolSizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+		};
+
+		VkDescriptorPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		poolInfo.maxSets = 1000;
+		poolInfo.poolSizeCount = std::size(poolSizes);
+		poolInfo.pPoolSizes = poolSizes;
+
+		VkDescriptorPool imguiPool;
+		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &imguiPool) != VK_SUCCESS) {
+			throw std::runtime_error("failed to allocate imgui descriptor pool!");
+		}
+
+		ImGui::CreateContext();
+
+		//this initializes imgui for SDL
+		ImGui_ImplGlfw_InitForVulkan(window, true);
+
+		//this initializes imgui for Vulkan
+		ImGui_ImplVulkan_InitInfo initInfo = {};
+		initInfo.Instance = instance;
+		initInfo.PhysicalDevice = physicalDevice;
+		initInfo.Device = device;
+		initInfo.Queue = graphicsQueue;
+		initInfo.DescriptorPool = imguiPool;
+		initInfo.MinImageCount = 3;
+		initInfo.ImageCount = 3;
+		initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+		ImGui_ImplVulkan_Init(&initInfo, renderPass);
+
+		//execute a gpu command to upload imgui font textures
+		VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+		EndSingleTimeCommands(commandBuffer);
+
+		//clear font textures from cpu data
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
 private:
