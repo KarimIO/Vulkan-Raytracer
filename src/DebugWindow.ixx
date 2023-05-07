@@ -5,11 +5,15 @@ import <imgui/imgui.h>;
 import <imgui/backends/imgui_impl_glfw.h>;
 import <imgui/backends/imgui_impl_vulkan.h>;
 import <vulkan/vulkan.h>;
+import Settings;
 import VulkanCore;
 
 export class DebugWindow {
 public:
-	bool Initialize() {
+	bool Initialize(Settings* settings, std::function<void()> OnUpdateParameter) {
+		this->settings = settings;
+		this->OnUpdateParameter = OnUpdateParameter;
+
 		VkDescriptorPoolSize poolSizes[] = {
 			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
 			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -71,36 +75,45 @@ public:
 
 		ImGui::Begin("Debug Panel", &isVisible);
 		if (ImGui::TreeNode("Ray Properties")) {
-			static int i1 = 0;
-			ImGui::SliderInt("Maximum Ray Bounces", &i1, 0, 30);
+			if (ImGui::SliderInt("Maximum Ray Bounces", &settings->numBounces, 0, 30)) {
+				OnUpdateParameter();
+			}
 
-			static int i2 = 0;
-			ImGui::SliderInt("Rays Per Pixel When Moving", &i2, 1, 50);
+			ImGui::SliderInt("Rays Per Pixel When Moving", &settings->numRaysWhileMoving, 1, 50);
+			ImGui::SliderInt("Rays Per Pixel When Still", &settings->numRaysWhileStill, 1, 200);
 
-			static int i3 = 0;
-			ImGui::SliderInt("Rays Per Pixel When Still", &i3, 1, 200);
 			ImGui::TreePop();
 		}
 
 		if (ImGui::TreeNode("Sun & Sky")) {
-			static float angle = 0.0f;
-			ImGui::SliderAngle("Angle Pitch", &angle);
-			ImGui::SliderAngle("Angle Yaw", &angle);
+			if (ImGui::SliderAngle("Angle Pitch", &settings->sunLightPitch)) {
+				OnUpdateParameter();
+			}
 
-			static float col1[3] = { 255.0f, 0.0f, 60.0f };
-			ImGui::ColorEdit3("Sky Color", col1);
+			if (ImGui::SliderAngle("Angle Yaw", &settings->sunLightYaw)) {
+				OnUpdateParameter();
+			}
 
-			static float col2[3] = { 255.0f, 0.0f, 60.0f };
-			ImGui::ColorEdit3("Horizon Color", col2);
+			if (ImGui::ColorEdit3("Sky Color", &settings->skyColor[0])) {
+				OnUpdateParameter();
+			}
 
-			static float col3[3] = { 255.0f, 0.0f, 60.0f };
-			ImGui::ColorEdit3("Ground Color", col3);
+			if (ImGui::ColorEdit3("Horizon Color", &settings->horizonColor[0])) {
+				OnUpdateParameter();
+			}
 
-			static float f1 = 0;
-			ImGui::SliderFloat("Sun Focus", &f1, 1, 500);
+			if (ImGui::ColorEdit3("Ground Color", &settings->groundColor[0])) {
+				OnUpdateParameter();
+			}
 
-			static float f2 = 0;
-			ImGui::SliderFloat("Sun Intensity", &f2, 1, 50);
+			if (ImGui::SliderFloat("Sun Focus", &settings->sunFocus, 1, 500)) {
+				OnUpdateParameter();
+			}
+
+			if (ImGui::SliderFloat("Sun Intensity", &settings->sunIntensity, 1, 50)) {
+				OnUpdateParameter();
+			}
+
 			ImGui::TreePop();
 		}
 		ImGui::End();
@@ -113,5 +126,7 @@ public:
 	}
 
 private:
+	std::function<void()> OnUpdateParameter;
+	Settings* settings;
 	bool isVisible = true;
 };

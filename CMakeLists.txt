@@ -31,6 +31,7 @@ target_sources(VulkanRaytracer PRIVATE
 		src/ReadFile.ixx
 		src/Renderer.ixx
 		src/Sampler.ixx
+		src/Settings.ixx
 		src/Texture.ixx
 		src/UniformBuffer.ixx
 		src/VulkanCore.ixx

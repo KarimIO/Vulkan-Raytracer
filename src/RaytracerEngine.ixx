@@ -22,11 +22,11 @@ public:
 			return false;
 		}
 
-		if (!debugWindow.Initialize()) {
+		if (!debugWindow.Initialize(&settings, std::bind(&Renderer::ResetFrameCounter, &renderer))) {
 			return false;
 		}
 
-		if (!renderer.Initialize(&vulkanCore, &debugWindow)) {
+		if (!renderer.Initialize(&vulkanCore, &debugWindow, &settings)) {
 			return false;
 		}
 
@@ -98,6 +98,7 @@ private:
 	VulkanCore vulkanCore;
 	Renderer renderer;
 	Camera camera;
+	Settings settings;
 
 	float deltaTime;
 	double lastTime;
