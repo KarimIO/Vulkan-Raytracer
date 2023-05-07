@@ -4,12 +4,11 @@ import std.core;
 
 import <glm/glm.hpp>;
 import <vulkan/vulkan.h>;
-import <imgui/imgui.h>;
-import <imgui/backends/imgui_impl_vulkan.h>;
 
 import Buffer;
 import ComputePipeline;
 import ComputeDescriptorSet;
+import DebugWindow;
 import DescriptorSet;
 import DescriptorPool;
 import GraphicsPipeline;
@@ -169,10 +168,11 @@ struct MeshInfoUniformBufferObject {
 
 export class Renderer {
 public:
-	bool Initialize(VulkanCore* vulkanCore) {
+	bool Initialize(VulkanCore* vulkanCore, DebugWindow* debugWindow) {
 		std::cout << "Initializing Renderer...\n";
 
 		this->vulkanCore = vulkanCore;
+		this->debugWindow = debugWindow;
 		vulkanCore->PassResizeFramebufferCallback([&](int w, int h) { this->ResizeFramebufferCallback(w, h); });
 
 		VulkanCore::GetVulkanCoreInstance().GetSize(screenWidth, screenHeight);
@@ -467,7 +467,7 @@ public:
 
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+		debugWindow->Render(commandBuffer);
 
 		vkCmdEndRenderPass(commandBuffer);
 
@@ -485,6 +485,7 @@ private:
 	int screenHeight;
 
 	VulkanCore* vulkanCore;
+	DebugWindow* debugWindow;
 	DescriptorSet descriptorSet;
 	ComputeDescriptorSet computeDescriptorSet;
 	DescriptorPool descriptorPool;

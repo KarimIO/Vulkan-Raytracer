@@ -22,6 +22,7 @@ target_sources(VulkanRaytracer PRIVATE
 		src/Camera.ixx
 		src/ComputeDescriptorSet.ixx
 		src/ComputePipeline.ixx
+		src/DebugWindow.ixx
 		src/DescriptorPool.ixx
 		src/DescriptorSet.ixx
 		src/GraphicsPipeline.ixx

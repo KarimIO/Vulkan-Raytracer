@@ -3,15 +3,13 @@ export module RaytracerEngine;
 import std.core;
 
 import <GLFW/glfw3.h>;
-import <imgui/imgui.h>;
-import <imgui/backends/imgui_impl_glfw.h>;
-import <imgui/backends/imgui_impl_vulkan.h>;
 
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
 import <glm/gtc/quaternion.hpp>;
 
 import Camera;
+import DebugWindow;
 import Renderer;
 import VulkanCore;
 
@@ -24,7 +22,11 @@ public:
 			return false;
 		}
 
-		if (!renderer.Initialize(&vulkanCore)) {
+		if (!debugWindow.Initialize()) {
+			return false;
+		}
+
+		if (!renderer.Initialize(&vulkanCore, &debugWindow)) {
 			return false;
 		}
 
@@ -55,12 +57,8 @@ public:
 			HandleInput();
 			SetUniformData();
 
-			ImGui_ImplVulkan_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
+			debugWindow.Update();
 
-			ImGui::ShowDemoWindow();
-			ImGui::Render();
 			renderer.Render();
 		}
 
@@ -96,6 +94,7 @@ public:
 	}
 
 private:
+	DebugWindow debugWindow;
 	VulkanCore vulkanCore;
 	Renderer renderer;
 	Camera camera;
