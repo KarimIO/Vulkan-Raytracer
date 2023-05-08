@@ -66,6 +66,10 @@ public:
 	~DebugWindow() {
 		VkDevice device = VulkanCore::GetDevice();
 
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+
 		vkDestroyDescriptorPool(device, imguiPool, nullptr);
 	}
 
