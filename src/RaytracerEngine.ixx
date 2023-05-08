@@ -94,8 +94,8 @@ public:
 	}
 
 private:
-	DebugWindow debugWindow;
 	VulkanCore vulkanCore;
+	DebugWindow debugWindow;
 	Renderer renderer;
 	Camera camera;
 	Settings settings;

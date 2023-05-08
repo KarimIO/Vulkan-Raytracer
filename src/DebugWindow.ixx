@@ -35,7 +35,6 @@ public:
 		poolInfo.poolSizeCount = std::size(poolSizes);
 		poolInfo.pPoolSizes = poolSizes;
 
-		VkDescriptorPool imguiPool;
 		if (vkCreateDescriptorPool(VulkanCore::GetDevice(), &poolInfo, nullptr, &imguiPool) != VK_SUCCESS) {
 			throw std::runtime_error("failed to allocate imgui descriptor pool!");
 		}
@@ -62,6 +61,12 @@ public:
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 
 		return true;
+	}
+
+	~DebugWindow() {
+		VkDevice device = VulkanCore::GetDevice();
+
+		vkDestroyDescriptorPool(device, imguiPool, nullptr);
 	}
 
 	void SetupFrame() {
@@ -127,6 +132,7 @@ public:
 
 private:
 	std::function<void()> OnUpdateParameter;
+	VkDescriptorPool imguiPool;
 	Settings* settings;
 	bool isVisible = true;
 };
