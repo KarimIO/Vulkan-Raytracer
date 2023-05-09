@@ -26,11 +26,13 @@ target_sources(VulkanRaytracer PRIVATE
 		src/DescriptorPool.ixx
 		src/DescriptorSet.ixx
 		src/GraphicsPipeline.ixx
+		src/ModelFile.ixx
 		src/RaytracerEngine.ixx
 		src/RaytracerTargetImage.ixx
 		src/ReadFile.ixx
 		src/Renderer.ixx
 		src/Sampler.ixx
+		src/Scene.ixx
 		src/Settings.ixx
 		src/Texture.ixx
 		src/UniformBuffer.ixx
@@ -65,6 +67,7 @@ target_include_directories(
 		libraries/glfw/include
 		libraries/glm/
 		libraries/stb/
+		libraries/tinygltf/
 		${Vulkan_INCLUDE_DIR}
 )
 

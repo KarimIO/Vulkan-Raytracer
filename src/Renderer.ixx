@@ -5,6 +5,7 @@ import std.core;
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
 import <glm/gtc/quaternion.hpp>;
+
 import <vulkan/vulkan.h>;
 
 import Buffer;
@@ -15,6 +16,7 @@ import DescriptorSet;
 import DescriptorPool;
 import GraphicsPipeline;
 import Texture;
+import ModelFile;
 import RaytracerTargetImage;
 import VulkanCore;
 
@@ -310,6 +312,8 @@ public:
 			indexUbo.indices[i].value = indices[i];
 		}
 
+		modelFile.Initialize("assets/model/box01.glb");
+
 		MeshInfoUniformBufferObject& meshUbo = meshInfoUniformBufferObject.GetMappedBuffer<MeshInfoUniformBufferObject>();
 		meshUbo.numMeshes = 1;
 		meshUbo.meshes[0].baseIndex = 0;
@@ -511,6 +515,7 @@ private:
 	ComputePipeline computePipeline;
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
+	ModelFile modelFile;
 
 	uint32_t framesSinceLastMove = 0;
 };
