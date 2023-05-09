@@ -83,6 +83,35 @@ public:
 		SetupFrame();
 
 		ImGui::Begin("Debug Panel", &isVisible);
+
+		RenderSceneComboBox();
+		RenderRaySettings();
+		RenderSkySettings();
+
+		ImGui::End();
+
+		ImGui::Render();
+	}
+
+	void RenderSceneComboBox() {
+		const char* items[] = { "Scene 1", "Scene 2" };
+		static int currentItemIndex = 0;
+		const char* comboText = items[currentItemIndex];
+		if (ImGui::BeginCombo("Current Scene", comboText, 0)) {
+			for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
+				const bool isSelected = (currentItemIndex == n);
+				if (ImGui::Selectable(items[n], isSelected))
+					currentItemIndex = n;
+
+				if (isSelected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+	}
+
+	void RenderRaySettings() {
 		if (ImGui::TreeNode("Ray Properties")) {
 			if (ImGui::SliderInt("Maximum Ray Bounces", &settings->numBounces, 0, 30)) {
 				OnUpdateParameter();
@@ -93,7 +122,9 @@ public:
 
 			ImGui::TreePop();
 		}
+	}
 
+	void RenderSkySettings() {
 		if (ImGui::TreeNode("Sun & Sky")) {
 			if (ImGui::SliderAngle("Angle Pitch", &settings->sunLightPitch)) {
 				OnUpdateParameter();
@@ -125,9 +156,6 @@ public:
 
 			ImGui::TreePop();
 		}
-		ImGui::End();
-
-		ImGui::Render();
 	}
 
 	void Render(VkCommandBuffer commandBuffer) {
