@@ -2,6 +2,8 @@ export module Renderer;
 
 import std.core;
 
+import "ModelFile.hpp";
+
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
 import <glm/gtc/quaternion.hpp>;
@@ -16,7 +18,7 @@ import DescriptorSet;
 import DescriptorPool;
 import GraphicsPipeline;
 import Texture;
-import ModelFile;
+// import ModelFile;
 import RaytracerTargetImage;
 import VulkanCore;
 
