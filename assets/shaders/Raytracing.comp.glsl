@@ -287,10 +287,14 @@ HitInfo CalculateRayHit(Ray ray) {
 }
 
 float GetSeededRandom(inout uint seed) {
-	seed = seed * 747796405 + 2891336453;
-	uint result = ((seed >> ((seed >> 28) + 4)) ^ seed) * 277803737;
-	result = (result >> 22) ^ result;
-	return result / 4294967295.0;
+    uint x = seed;
+
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 15;
+    seed = x;
+
+    return (x & 0xffffff) / 16777216.0f;
 }
 
 float GetNormalizedSeededRandom(inout uint seed) {
@@ -508,7 +512,8 @@ void main() {
 	ivec2 dim = imageSize(resultImage);
 	vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
 
-	uint randomSeed = ((ubo.framesSinceLastMove + 1000) * 200) + gl_GlobalInvocationID.x * dim.x + gl_GlobalInvocationID.y;
+	// These three constants are large primes
+	uint randomSeed = ubo.framesSinceLastMove * 6551 + gl_GlobalInvocationID.x * 1973 + gl_GlobalInvocationID.y * 9277;
 	vec3 pixelColor = MultiRaytrace(uv, dim, randomSeed);
 
 	const float exposure = 1.0f;
