@@ -84,9 +84,12 @@ public:
 
 		ImGui::Begin("Debug Panel", &isVisible);
 
-		RenderSceneComboBox();
+		// TODO: Re-add when I can support multiple scenes
+		// RenderSceneComboBox();
+		
 		RenderRaySettings();
 		RenderSkySettings();
+		RenderControls();
 
 		ImGui::End();
 
@@ -120,6 +123,21 @@ public:
 			ImGui::SliderInt("Rays Per Pixel When Moving", &settings->numRaysWhileMoving, 1, 50);
 			ImGui::SliderInt("Rays Per Pixel When Still", &settings->numRaysWhileStill, 1, 200);
 
+
+			if (ImGui::SliderFloat("Blur Strength", &settings->blurStrength, 1, 100)) {
+				OnUpdateParameter();
+			}
+
+			if (ImGui::SliderFloat("Depth of Field", &settings->dofStrength, 1, 100)) {
+				OnUpdateParameter();
+			}
+
+			/*
+			if (ImGui::SliderFloat("Focal Distance", &settings->focalDistance, 0.01f, 100.0f)) {
+				OnUpdateParameter();
+			}
+			*/
+		
 			ImGui::TreePop();
 		}
 	}
@@ -156,6 +174,13 @@ public:
 
 			ImGui::TreePop();
 		}
+	}
+
+	void RenderControls() {
+		ImGui::Text("WASD or Arrow keys to move.");
+		ImGui::Text("Mouse to turn.");
+		ImGui::Text("Tab to toggle input.");
+		ImGui::Text("Escape to exit.");
 	}
 
 	void Render(VkCommandBuffer commandBuffer) {

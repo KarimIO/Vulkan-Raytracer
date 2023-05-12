@@ -8,7 +8,10 @@ export class Settings {
 public:
 	int numBounces = 3;
 	int numRaysWhileStill = 50;
-	int numRaysWhileMoving = 5;
+	int numRaysWhileMoving = 2;
+	float dofStrength = 1.0f;
+	float blurStrength = 1.0f;
+	float focalDistance = 5.0f;
 	float sunLightPitch = -32.0f * glm::pi<float>() / 180.0f;
 	float sunLightYaw = 10.0f * glm::pi<float>() / 180.0f;
 	glm::vec3 skyColor = glm::vec3(0.11, 0.36, 0.57);
