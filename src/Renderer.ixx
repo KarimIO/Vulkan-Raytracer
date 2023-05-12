@@ -2,8 +2,6 @@ export module Renderer;
 
 import std.core;
 
-import "ModelFile.hpp";
-
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
 import <glm/gtc/quaternion.hpp>;
@@ -18,7 +16,8 @@ import DescriptorSet;
 import DescriptorPool;
 import GraphicsPipeline;
 import Texture;
-// import ModelFile;
+import Material;
+import ModelFile;
 import RaytracerTargetImage;
 import VulkanCore;
 
@@ -72,59 +71,6 @@ struct RenderUniformBufferObject {
 	float dofStrength;
 	float blurStrength;
 	uint32_t framesSinceLastMove = 0;
-};
-
-struct Material {
-	alignas(16) glm::vec3 albedo = glm::vec3(0.0f, 0.0f, 0.0f);
-	alignas(16) glm::vec3 specular = glm::vec3(0.04f, 0.04f, 0.04f);
-	float specularChance = 0.04f;
-	float ior = 1.0f;
-	alignas(16) glm::vec3 emission = glm::vec3(0.0f, 0.0f, 0.0f);
-	float surfaceRoughness = 0.5f;
-	float refractionRoughness = 0.0f;
-	alignas(16) glm::vec3 transmissionColor = glm::vec3(0.0f, 0.0f, 0.0f);
-	float refractionChance = 0.0f;
-
-	static Material Emissive(glm::vec3 emission) {
-		Material material;
-		material.emission = emission;
-
-		return material;
-	}
-
-	static Material Diffuse(glm::vec3 albedoColor, float roughness, float ior) {
-		Material material;
-		material.albedo = albedoColor;
-		material.surfaceRoughness = roughness;
-		material.ior = ior;
-		material.specularChance = 0.04f;
-
-		return material;
-	}
-
-	static Material Metal(glm::vec3 specularColor, float roughness, float ior) {
-		Material material;
-		material.specular = specularColor;
-		material.surfaceRoughness = roughness;
-		material.ior = ior;
-		material.specularChance = 1.0f;
-
-		return material;
-	}
-
-	static Material Transmissive(glm::vec3 transmissionColor, float refractionRoughness, float ior) {
-		Material material;
-		material.albedo = glm::vec3(1.0f, 1.0f, 1.0f);
-		material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-		material.transmissionColor = transmissionColor;
-		material.surfaceRoughness = 0.0f;
-		material.refractionRoughness = refractionRoughness;
-		material.ior = ior;
-		material.refractionChance = 1.0f;
-		material.specularChance = 0.0f;
-
-		return material;
-	}
 };
 
 struct MaterialUniformBufferObject {
@@ -314,7 +260,9 @@ public:
 			indexUbo.indices[i].value = indices[i];
 		}
 
-		modelFile.Initialize("assets/model/box01.glb");
+		ModelFile modelFile;
+		Scene scene;
+		modelFile.Initialize("assets/model/box01.glb", scene);
 
 		MeshInfoUniformBufferObject& meshUbo = meshInfoUniformBufferObject.GetMappedBuffer<MeshInfoUniformBufferObject>();
 		meshUbo.numMeshes = 1;
@@ -379,8 +327,8 @@ public:
 		ubo.groundColor = settings->groundColor;
 		ubo.sunFocus = settings->sunFocus;
 		ubo.sunIntensity = settings->sunIntensity;
-		ubo.dofStrength = 1.0f;
-		ubo.blurStrength = 1.0f;
+		ubo.dofStrength = settings->dofStrength;
+		ubo.blurStrength = settings->blurStrength;
 		ubo.framesSinceLastMove = framesSinceLastMove++;
 	}
 
@@ -517,7 +465,6 @@ private:
 	ComputePipeline computePipeline;
 	Buffer vertexBuffer;
 	Buffer indexBuffer;
-	ModelFile modelFile;
 
 	uint32_t framesSinceLastMove = 0;
 };

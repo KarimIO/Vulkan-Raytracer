@@ -26,6 +26,8 @@ target_sources(VulkanRaytracer PRIVATE
 		src/DescriptorPool.ixx
 		src/DescriptorSet.ixx
 		src/GraphicsPipeline.ixx
+		src/Material.ixx
+		src/ModelFile.ixx
 		src/RaytracerEngine.ixx
 		src/RaytracerTargetImage.ixx
 		src/ReadFile.ixx
@@ -42,8 +44,6 @@ target_sources(
 	VulkanRaytracer PRIVATE
 		src/Main.ixx
 		src/StbImpl.cpp
-		src/ModelFile.cpp
-		src/ModelFile.hpp
 		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui.h"
 		"${CMAKE_CURRENT_SOURCE_DIR}/libraries/imgui/imgui.cpp"
 		
