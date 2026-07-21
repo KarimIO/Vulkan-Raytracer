@@ -1,6 +1,6 @@
 export module DescriptorSet;
 
-import std.core;
+import std;
 import <vulkan/vulkan.h>;
 import RaytracerTargetImage;
 import Sampler;

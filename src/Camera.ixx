@@ -1,6 +1,6 @@
 export module Camera;
 
-import std.core;
+import std;
 
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;

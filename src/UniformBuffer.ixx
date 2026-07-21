@@ -1,6 +1,6 @@
 export module UniformBuffer;
 
-import std.core;
+import std;
 import <glm/glm.hpp>;
 import <vulkan/vulkan.h>;
 import VulkanCore;

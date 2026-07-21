@@ -1,6 +1,6 @@
 export module VulkanCore;
 
-import std.core;
+import std;
 import <vulkan/vulkan.h>;
 import <GLFW/glfw3.h>;
 
@@ -1167,7 +1167,7 @@ private:
 			bool layerFound = false;
 
 			for (const auto& layerProperties : availableLayers) {
-				if (strcmp(layerName, layerProperties.layerName) == 0) {
+				if (std::strcmp(layerName, layerProperties.layerName) == 0) {
 					layerFound = true;
 					break;
 				}

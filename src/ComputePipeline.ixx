@@ -1,6 +1,6 @@
 export module ComputePipeline;
 
-import std.core;
+import std;
 
 import <vulkan/vulkan.h>;
 

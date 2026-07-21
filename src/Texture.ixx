@@ -1,6 +1,6 @@
 export module Texture;
 
-import std.core;
+import std;
 import <vulkan/vulkan.h>;
 import <stb_image.h>;
 import VulkanCore;
@@ -24,7 +24,7 @@ public:
 
 		void* data;
 		vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
-		memcpy(data, pixels, static_cast<size_t>(imageSize));
+		std::memcpy(data, pixels, static_cast<size_t>(imageSize));
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		stbi_image_free(pixels);

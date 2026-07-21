@@ -1,4 +1,4 @@
-import std.core;
+import std;
 
 import RaytracerEngine;
 

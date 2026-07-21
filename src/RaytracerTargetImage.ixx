@@ -1,6 +1,6 @@
 export module RaytracerTargetImage;
 
-import std.core;
+import std;
 import <GLFW/glfw3.h>;
 import <vulkan/vulkan.h>;
 import VulkanCore;

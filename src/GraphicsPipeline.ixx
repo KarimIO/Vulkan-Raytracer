@@ -1,6 +1,6 @@
 export module GraphicsPipeline;
 
-import std.core;
+import std;
 import ReadFile;
 import <vulkan/vulkan.h>;
 import VulkanCore;

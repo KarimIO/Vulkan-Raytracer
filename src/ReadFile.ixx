@@ -1,6 +1,6 @@
 export module ReadFile;
 
-import std.core;
+import std;
 
 export std::vector<char> ReadFile(const std::string& filename) {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);

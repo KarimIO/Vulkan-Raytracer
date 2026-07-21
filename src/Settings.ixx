@@ -1,6 +1,6 @@
 export module Settings;
 
-import std.core;
+import std;
 import <glm/glm.hpp>;
 import <glm/gtc/constants.hpp>;
 

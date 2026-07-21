@@ -1,6 +1,6 @@
 export module Buffer;
 
-import std.core;
+import std;
 import <vulkan/vulkan.h>;
 import VulkanCore;
 
@@ -17,7 +17,7 @@ public:
 
 		void* dstData;
 		vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &dstData);
-		memcpy(dstData, srcData, bufferSize);
+		std::memcpy(dstData, srcData, bufferSize);
 		vkUnmapMemory(device, stagingBufferMemory);
 
 		VulkanCore::CreateBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usageBit, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);

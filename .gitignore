@@ -4,6 +4,7 @@
 /RaytracerTest/
 /x64/
 *.sln
+*.slnx
 *.vcxproj*
 /*.dir/
 /Debug/

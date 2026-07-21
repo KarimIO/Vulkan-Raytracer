@@ -1,6 +1,6 @@
 export module DebugWindow;
 
-import std.core;
+import std;
 import <imgui/imgui.h>;
 import <imgui/backends/imgui_impl_glfw.h>;
 import <imgui/backends/imgui_impl_vulkan.h>;

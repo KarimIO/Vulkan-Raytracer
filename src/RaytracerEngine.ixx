@@ -1,6 +1,6 @@
 export module RaytracerEngine;
 
-import std.core;
+import std;
 
 import <GLFW/glfw3.h>;
 

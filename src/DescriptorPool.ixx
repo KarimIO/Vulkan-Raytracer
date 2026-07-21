@@ -1,6 +1,6 @@
 export module DescriptorPool;
 
-import std.core;
+import std;
 import <vulkan/vulkan.h>;
 import VulkanCore;
 

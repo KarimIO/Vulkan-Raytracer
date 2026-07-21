@@ -1,6 +1,6 @@
 export module Renderer;
 
-import std.core;
+import std;
 
 import <glm/glm.hpp>;
 import <glm/gtc/matrix_transform.hpp>;
@@ -17,6 +17,7 @@ import GraphicsPipeline;
 import Texture;
 import RaytracerTargetImage;
 import VulkanCore;
+import Settings;
 
 struct ScreenSpaceVertex {
 	glm::vec2 pos;
